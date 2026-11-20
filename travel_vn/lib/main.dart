@@ -1,122 +1,359 @@
 import 'package:flutter/material.dart';
 
-void main() {
-  runApp(const MyApp());
-}
+import 'destination_repository.dart';
+import 'destination_admin.dart';
+
+void main() => runApp(const MyApp());
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: .fromSeed(seedColor: Colors.deepPurple),
+  Widget build(BuildContext context) => MaterialApp(
+    title: 'Travel Vietnam',
+    theme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal)),
+    home: const DestinationsPage(),
+  );
+}
+
+class DestinationsPage extends StatefulWidget {
+  const DestinationsPage({super.key});
+
+  @override
+  State<DestinationsPage> createState() => _DestinationsPageState();
+}
+
+class _DestinationsPageState extends State<DestinationsPage> {
+  final _repository = DestinationRepository();
+  final _search = TextEditingController();
+  late Future<List<Map<String, dynamic>>> _categories;
+  late Future<List<Destination>> _destinations;
+  int _page = 1;
+  int? _category;
+  String _keyword = '';
+  String? _token;
+
+  @override
+  void initState() {
+    super.initState();
+    _categories = _repository.categories();
+    _destinations = _repository.list(_page, _category, _keyword);
+  }
+
+  @override
+  void dispose() {
+    _search.dispose();
+    super.dispose();
+  }
+
+  void _load(int page) => setState(() {
+    _page = page;
+    _destinations = _repository.list(page, _category, _keyword);
+  });
+
+  Future<void> _signIn() async {
+    final token = await Navigator.of(context).push<String>(
+      MaterialPageRoute(
+        builder: (_) => AdminLoginPage(repository: _repository),
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
     );
-  }
-}
-
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
-
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
+    if (mounted && token != null) setState(() => _token = token);
   }
 
-  @override
-  Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
-    return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: .center,
-          children: [
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
+  Future<void> _edit([Destination? item]) async {
+    try {
+      final categories = await _categories;
+      final detail = item == null ? null : await _repository.detail(item.id);
+      if (!mounted || _token == null) return;
+      final saved = await Navigator.of(context).push<bool>(
+        MaterialPageRoute(
+          builder: (_) => DestinationEditor(
+            repository: _repository,
+            token: _token!,
+            categories: categories,
+            item: detail,
+          ),
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
+      );
+      if (mounted && saved == true) _load(_page);
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(error.toString())));
+      }
+    }
+  }
+
+  Future<void> _delete(Destination item) async {
+    final remove = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Xóa ${item.name}?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Hủy'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Xóa'),
+          ),
+        ],
       ),
     );
+    if (!mounted || remove != true || _token == null) return;
+    try {
+      await _repository.delete(_token!, item.id);
+      if (mounted) _load(_page);
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(error.toString())));
+      }
+    }
   }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(
+      title: const Text('Địa điểm du lịch'),
+      actions: [
+        if (_token == null)
+          IconButton(
+            onPressed: _signIn,
+            icon: const Icon(Icons.admin_panel_settings),
+            tooltip: 'Đăng nhập quản trị',
+          )
+        else ...[
+          IconButton(
+            onPressed: () => _edit(),
+            icon: const Icon(Icons.add),
+            tooltip: 'Thêm địa điểm',
+          ),
+          IconButton(
+            onPressed: () => setState(() => _token = null),
+            icon: const Icon(Icons.logout),
+            tooltip: 'Thoát quản trị',
+          ),
+        ],
+      ],
+    ),
+    body: Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: TextField(
+            controller: _search,
+            textInputAction: TextInputAction.search,
+            onSubmitted: (value) {
+              _keyword = value;
+              _load(1);
+            },
+            decoration: const InputDecoration(
+              labelText: 'Tìm theo tên hoặc tỉnh/thành',
+              prefixIcon: Icon(Icons.search),
+            ),
+          ),
+        ),
+        FutureBuilder(
+          future: _categories,
+          builder: (context, snapshot) => Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: DropdownButton<int>(
+              isExpanded: true,
+              value: _category ?? 0,
+              items: [
+                const DropdownMenuItem(
+                  value: 0,
+                  child: Text('Tất cả danh mục'),
+                ),
+                for (final category
+                    in snapshot.data ?? <Map<String, dynamic>>[])
+                  DropdownMenuItem(
+                    value: category['categoryId'] as int,
+                    child: Text(category['categoryName'] as String),
+                  ),
+              ],
+              onChanged: (value) {
+                _category = value == 0 ? null : value;
+                _load(1);
+              },
+            ),
+          ),
+        ),
+        Expanded(
+          child: FutureBuilder(
+            future: _destinations,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState != ConnectionState.done) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              if (snapshot.hasError) {
+                return Center(
+                  child: TextButton(
+                    onPressed: () {
+                      _categories = _repository.categories();
+                      _load(_page);
+                    },
+                    child: const Text('Không tải được địa điểm. Thử lại'),
+                  ),
+                );
+              }
+              final items = snapshot.data!;
+              return Column(
+                children: [
+                  Expanded(
+                    child: items.isEmpty
+                        ? const Center(child: Text('Không tìm thấy địa điểm'))
+                        : ListView.builder(
+                            itemCount: items.length,
+                            itemBuilder: (context, index) {
+                              final item = items[index];
+                              return ListTile(
+                                leading: DestinationImage(
+                                  repository: _repository,
+                                  path: item.text('image'),
+                                  width: 72,
+                                ),
+                                title: Text(item.name),
+                                subtitle: Text(item.text('province')),
+                                trailing: _token == null
+                                    ? const Icon(Icons.chevron_right)
+                                    : PopupMenuButton<String>(
+                                        onSelected: (action) => action == 'edit'
+                                            ? _edit(item)
+                                            : _delete(item),
+                                        itemBuilder: (_) => const [
+                                          PopupMenuItem(
+                                            value: 'edit',
+                                            child: Text('Sửa'),
+                                          ),
+                                          PopupMenuItem(
+                                            value: 'delete',
+                                            child: Text('Xóa'),
+                                          ),
+                                        ],
+                                      ),
+                                onTap: () => Navigator.of(context).push(
+                                  MaterialPageRoute<void>(
+                                    builder: (_) => DestinationDetailPage(
+                                      repository: _repository,
+                                      item: item,
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                  ),
+                  SafeArea(
+                    top: false,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        IconButton(
+                          tooltip: 'Trang trước',
+                          onPressed: _page == 1 ? null : () => _load(_page - 1),
+                          icon: const Icon(Icons.chevron_left),
+                        ),
+                        Text('Trang $_page'),
+                        IconButton(
+                          tooltip: 'Trang sau',
+                          onPressed: items.length < 10
+                              ? null
+                              : () => _load(_page + 1),
+                          icon: const Icon(Icons.chevron_right),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+class DestinationDetailPage extends StatefulWidget {
+  const DestinationDetailPage({
+    super.key,
+    required this.repository,
+    required this.item,
+  });
+
+  final DestinationRepository repository;
+  final Destination item;
+
+  @override
+  State<DestinationDetailPage> createState() => _DestinationDetailPageState();
+}
+
+class _DestinationDetailPageState extends State<DestinationDetailPage> {
+  late final _detail = widget.repository.detail(widget.item.id);
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(title: Text(widget.item.name)),
+    body: FutureBuilder(
+      future: _detail,
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return const Center(child: Text('Không tải được chi tiết địa điểm'));
+        }
+        final item = snapshot.data;
+        if (item == null) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        return ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            for (final path in [item.text('image'), ...item.gallery])
+              if (path.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: DestinationImage(
+                    repository: widget.repository,
+                    path: path,
+                  ),
+                ),
+            Text(item.name, style: Theme.of(context).textTheme.headlineSmall),
+            Text(item.text('province')),
+            if (item.text('address').isNotEmpty) Text(item.text('address')),
+            if (item.text('openingHours').isNotEmpty)
+              Text('Giờ mở cửa: ${item.text('openingHours')}'),
+            Text('Giá vé: ${item.text('ticketPrice')} đ'),
+            const SizedBox(height: 12),
+            Text(item.text('description')),
+          ],
+        );
+      },
+    ),
+  );
+}
+
+class DestinationImage extends StatelessWidget {
+  const DestinationImage({
+    super.key,
+    required this.repository,
+    required this.path,
+    this.width,
+  });
+
+  final DestinationRepository repository;
+  final String path;
+  final double? width;
+
+  @override
+  Widget build(BuildContext context) => path.isEmpty
+      ? const Icon(Icons.image_outlined)
+      : Image.network(
+          repository.imageUrl(path).toString(),
+          width: width,
+          fit: BoxFit.cover,
+          errorBuilder: (_, _, _) => const Icon(Icons.broken_image_outlined),
+        );
 }
