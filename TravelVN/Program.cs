@@ -1,3 +1,4 @@
+
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -13,23 +14,28 @@ builder.Services.AddAuthentication(p =>
 {
     p.TokenValidationParameters = new TokenValidationParameters
     {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateIssuerSigningKey = true,
+        ValidateLifetime = true,
         ValidAudience = builder.Configuration["Jwt:Audience"],
         ValidIssuer = builder.Configuration["Jwt:Issuer"],
         IssuerSigningKey = new SymmetricSecurityKey(
             Encoding.ASCII.GetBytes(builder.Configuration["Jwt:SecretKey"]
             ?? throw new KeyNotFoundException("Jwt:SecretKey"))
-        ),
-        ValidateLifetime = true
+        )
     };
 });
 
-
+builder.Services.AddAuthorization();
 builder.Services.AddScoped<SiteProvider>();
-
 builder.Services.AddMvc();
+
 var app = builder.Build();
 
 app.UseStaticFiles();
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapDefaultControllerRoute();
 
