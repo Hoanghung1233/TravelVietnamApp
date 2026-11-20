@@ -2,11 +2,11 @@ namespace TravelVN.API.Models;
 
 public class Member
 {
-    public string MemberId { get; set; } = null!;
+    public string? MemberId { get; set; } 
 
-    public string Surname { get; set; } = null!;
+    public string? Surname { get; set; } = null!;
 
-    public string GivenName { get; set; } = null!;
+    public string? GivenName { get; set; } = null!;
 
     public string Email { get; set; } = null!;
 
@@ -18,5 +18,5 @@ public class Member
 
     public Role Role { get; set; }
 
-    public DateTime CreatedAt { get; set; }
+    public DateTime? CreatedAt { get; set; }
 }

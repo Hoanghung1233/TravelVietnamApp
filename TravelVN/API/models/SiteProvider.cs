@@ -1,3 +1,5 @@
+using TravelVN.API.models;
+
 namespace TravelVN.API.Models;
 
 
@@ -10,4 +12,6 @@ public class SiteProvider : BaseProvider
     public CategoryRepository Category => category ??= new CategoryRepository(Connection);
     MemberRepository? member;
     public MemberRepository Member => member ??= new MemberRepository(Connection);
+    BookingRepository? booking;
+    public BookingRepository Booking => booking ??= new BookingRepository(Connection);
 }
