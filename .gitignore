@@ -27,3 +27,63 @@ doc/api/
 
 .flutter-plugins
 .flutter-plugins-dependencies
+
+# ==================================================
+# .NET / ASP.NET Core
+# ==================================================
+
+# Build output
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+artifacts/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Visual Studio Code
+.vscode/
+
+# JetBrains Rider
+.idea/
+*.sln.iml
+
+# .NET generated files
+*.pdb
+*.cache
+*.tmp
+*.log
+
+# NuGet
+*.nupkg
+*.snupkg
+.nuget/
+
+# ASP.NET Core secrets and environment
+appsettings.Development.json
+secrets.json
+.env
+.env.*
+!.env.example
+
+# Local databases
+*.mdf
+*.ldf
+*.db-shm
+*.db-wal
+
+# Publish output
+publish/
+wwwroot/lib/
+
+# ==================================================
+# Sensitive configuration
+# ==================================================
+
+# Do not commit local secrets
+
