@@ -5,17 +5,68 @@ USE TravelVietnamDB;
 GO
 
 -- 1. USERS
-CREATE TABLE Member (
+CREATE TABLE dbo.Member
+(
     MemberId VARCHAR(32) PRIMARY KEY,
     Surname NVARCHAR(60) NOT NULL,
     GivenName NVARCHAR(30) NOT NULL,
-    Email NVARCHAR(150) NOT NULL UNIQUE,
-    Password NVARCHAR(255) NOT NULL,
-    Phone NVARCHAR(15),
-    Avatar NVARCHAR(255),
-    Role NVARCHAR(10) NOT NULL ,
+    Email NVARCHAR(150) NULL UNIQUE,
+    Password NVARCHAR(255) NULL,
+    Phone NVARCHAR(15) NULL,
+    Avatar NVARCHAR(255) NULL,
+    Role NVARCHAR(10) NOT NULL DEFAULT 'Member',
+    IsEmailVerified BIT NOT NULL DEFAULT 0,
     CreatedAt DATETIME2 NOT NULL DEFAULT GETDATE()
 );
+GO
+
+CREATE UNIQUE INDEX UX_Member_Email
+ON dbo.Member(Email)
+WHERE Email IS NOT NULL;
+GO
+-- 3. TAO BANG LIEN KET GOOGLE, FACEBOOK, ZALO
+CREATE TABLE dbo.MemberSocialLogin
+(
+    SocialLoginId INT IDENTITY(1,1) PRIMARY KEY,
+    MemberId VARCHAR(32) NOT NULL,
+    Provider NVARCHAR(20) NOT NULL,
+    ProviderUserId NVARCHAR(255) NOT NULL,
+    CreatedAt DATETIME2 NOT NULL DEFAULT GETDATE(),
+    CONSTRAINT FK_MemberSocialLogin_Member
+        FOREIGN KEY (MemberId)
+        REFERENCES dbo.Member(MemberId),
+    CONSTRAINT UQ_MemberSocialLogin_ProviderUser
+        UNIQUE (Provider, ProviderUserId),
+    CONSTRAINT UQ_MemberSocialLogin_MemberProvider
+        UNIQUE (MemberId, Provider),
+    CONSTRAINT CK_MemberSocialLogin_Provider
+        CHECK (Provider IN ('Google', 'Facebook', 'Zalo'))
+);
+GO
+
+-- 4. TAO BANG OTP EMAIL
+CREATE TABLE dbo.EmailOtp
+(
+    OtpId BIGINT IDENTITY(1,1) PRIMARY KEY,
+    MemberId VARCHAR(32) NOT NULL,
+    Email NVARCHAR(150) NOT NULL,
+    CodeHash NVARCHAR(255) NOT NULL,
+    Purpose NVARCHAR(30) NOT NULL,
+    ExpiresAt DATETIME2 NOT NULL,
+    IsUsed BIT NOT NULL DEFAULT 0,
+    Attempts INT NOT NULL DEFAULT 0,
+    CreatedAt DATETIME2 NOT NULL DEFAULT GETDATE(),
+    CONSTRAINT FK_EmailOtp_Member
+        FOREIGN KEY (MemberId)
+        REFERENCES dbo.Member(MemberId),
+    CONSTRAINT CK_EmailOtp_Purpose
+        CHECK (Purpose IN ('VerifyEmail', 'ResetPassword'))
+);
+GO
+
+-- 5. TAO INDEX CHO OTP
+CREATE INDEX IX_EmailOtp_Member_Purpose
+ON dbo.EmailOtp(MemberId, Purpose, CreatedAt);
 GO
 
 -- 2. CATEGORIES

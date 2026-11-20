@@ -10,4 +10,8 @@ public class SiteProvider : BaseProvider
     public CategoryRepository Category => category ??= new CategoryRepository(Connection);
     MemberRepository? member;
     public MemberRepository Member => member ??= new MemberRepository(Connection);
+    MemberSocialLoginRepository? memberSocialLogin;
+    public MemberSocialLoginRepository MemberSocialLogin => memberSocialLogin ??= new MemberSocialLoginRepository(Connection);
+    private EmailOtpRepository? emailOtp;
+    public EmailOtpRepository EmailOtp => emailOtp ??= new EmailOtpRepository(Connection);
 }
