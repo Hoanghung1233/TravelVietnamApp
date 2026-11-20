@@ -1,0 +1,57 @@
+
+# =========================
+# Flutter / Dart
+# =========================
+.dart_tool/
+.packages
+.pub/
+.pub-cache/
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+.metadata
+*.iml
+.idea/
+.vscode/
+
+# =========================
+# .NET / ASP.NET Core
+# =========================
+[Bb]in/
+[Oo]bj/
+.vs/
+*.user
+*.suo
+*.pdb
+*.cache
+*.log
+[Ll]ogs/
+artifacts/
+publish/
+.nuget/
+*.nupkg
+*.snupkg
+
+# =========================
+# Environment and secrets
+# =========================
+.env
+.env.*
+!.env.example
+appsettings.Development.json
+secrets.json
+
+# =========================
+# Local database files
+# =========================
+*.mdf
+*.ldf
+*.db-shm
+*.db-wal
+
+# =========================
+# Operating system
+# =========================
+.DS_Store
+Thumbs.db
+desktop.ini
