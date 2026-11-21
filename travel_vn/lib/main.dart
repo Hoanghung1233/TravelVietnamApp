@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'destination_repository.dart';
 import 'destination_admin.dart';
+import 'destination_map.dart';
 
 void main() => runApp(const MyApp());
 
@@ -292,7 +293,7 @@ class DestinationDetailPage extends StatefulWidget {
 }
 
 class _DestinationDetailPageState extends State<DestinationDetailPage> {
-  late final _detail = widget.repository.detail(widget.item.id);
+  late Future<Destination> _detail = widget.repository.detail(widget.item.id);
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -301,7 +302,14 @@ class _DestinationDetailPageState extends State<DestinationDetailPage> {
       future: _detail,
       builder: (context, snapshot) {
         if (snapshot.hasError) {
-          return const Center(child: Text('Không tải được chi tiết địa điểm'));
+          return Center(
+            child: TextButton(
+              onPressed: () => setState(
+                () => _detail = widget.repository.detail(widget.item.id),
+              ),
+              child: const Text('Không tải được chi tiết. Thử lại'),
+            ),
+          );
         }
         final item = snapshot.data;
         if (item == null) {
@@ -328,6 +336,33 @@ class _DestinationDetailPageState extends State<DestinationDetailPage> {
             Text('Giá vé: ${item.text('ticketPrice')} đ'),
             const SizedBox(height: 12),
             Text(item.text('description')),
+            const SizedBox(height: 12),
+            if (item.latitude != null && item.longitude != null)
+              OutlinedButton.icon(
+                icon: const Icon(Icons.map_outlined),
+                label: const Text('Xem bản đồ'),
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => DestinationMapPage(
+                      name: item.name,
+                      latitude: item.latitude!,
+                      longitude: item.longitude!,
+                    ),
+                  ),
+                ),
+              ),
+            OutlinedButton.icon(
+              icon: const Icon(Icons.explore_outlined),
+              label: const Text('Địa điểm liên quan'),
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => RelatedDestinationsPage(
+                    repository: widget.repository,
+                    current: item,
+                  ),
+                ),
+              ),
+            ),
           ],
         );
       },
@@ -356,4 +391,115 @@ class DestinationImage extends StatelessWidget {
           fit: BoxFit.cover,
           errorBuilder: (_, _, _) => const Icon(Icons.broken_image_outlined),
         );
+}
+
+class RelatedDestinationsPage extends StatefulWidget {
+  const RelatedDestinationsPage({
+    super.key,
+    required this.repository,
+    required this.current,
+  });
+  final DestinationRepository repository;
+  final Destination current;
+
+  @override
+  State<RelatedDestinationsPage> createState() =>
+      _RelatedDestinationsPageState();
+}
+
+class _RelatedDestinationsPageState extends State<RelatedDestinationsPage> {
+  static const _pageSize = 6;
+  int _page = 1;
+  late Future<List<Destination>> _results = _fetch();
+
+  Future<List<Destination>> _fetch() => widget.repository.list(
+    _page,
+    widget.current.categoryId,
+    '',
+    pageSize: _pageSize,
+  );
+
+  void _load(int page) => setState(() {
+    _page = page;
+    _results = _fetch();
+  });
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(title: const Text('Địa điểm liên quan')),
+    body: FutureBuilder(
+      future: _results,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (snapshot.hasError) {
+          return Center(
+            child: TextButton(
+              onPressed: () => _load(_page),
+              child: const Text('Thử tải lại'),
+            ),
+          );
+        }
+        final page = snapshot.data!;
+        final items = page
+            .where((item) => item.id != widget.current.id)
+            .toList();
+        return Column(
+          children: [
+            Expanded(
+              child: items.isEmpty
+                  ? const Center(
+                      child: Text('Không có địa điểm khác ở trang này'),
+                    )
+                  : ListView(
+                      children: [
+                        for (final item in items)
+                          ListTile(
+                            leading: DestinationImage(
+                              repository: widget.repository,
+                              path: item.text('image'),
+                              width: 72,
+                            ),
+                            title: Text(item.name),
+                            subtitle: Text(item.text('province')),
+                            trailing: const Icon(Icons.chevron_right),
+                            onTap: () => Navigator.of(context).push(
+                              MaterialPageRoute<void>(
+                                builder: (_) => DestinationDetailPage(
+                                  repository: widget.repository,
+                                  item: item,
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+            ),
+            SafeArea(
+              top: false,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  IconButton(
+                    tooltip: 'Trang trước',
+                    onPressed: _page > 1 ? () => _load(_page - 1) : null,
+                    icon: const Icon(Icons.chevron_left),
+                  ),
+                  Text('Trang $_page'),
+                  IconButton(
+                    tooltip: 'Trang sau',
+                    onPressed: page.length == _pageSize
+                        ? () => _load(_page + 1)
+                        : null,
+                    icon: const Icon(Icons.chevron_right),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        );
+      },
+    ),
+  );
 }

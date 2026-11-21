@@ -30,11 +30,12 @@ class DestinationRepository {
   Future<List<Destination>> list(
     int page,
     int? categoryId,
-    String keyword,
-  ) async {
+    String keyword, {
+    int pageSize = 10,
+  }) async {
     final data = await _get('Destination', {
       'page': '$page',
-      'pageSize': '10',
+      'pageSize': '$pageSize',
       if (categoryId != null) 'categoryId': '$categoryId',
       if (keyword.trim().isNotEmpty) 'keyword': keyword.trim(),
     }) as List;
@@ -119,6 +120,9 @@ class Destination {
   final Map<String, dynamic> data;
 
   int get id => data['destinationId'] as int;
+  int get categoryId => data['categoryId'] as int;
+  double? get latitude => (data['latitude'] as num?)?.toDouble();
+  double? get longitude => (data['longitude'] as num?)?.toDouble();
   String get name => text('name');
   String text(String key) => data[key]?.toString() ?? '';
 
