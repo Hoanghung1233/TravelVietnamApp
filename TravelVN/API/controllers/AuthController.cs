@@ -12,6 +12,7 @@ public class AuthController : BaseController
         ModelState.Remove(nameof(obj.MemberId));
         if (ModelState.IsValid)
         {
+            obj.Role = Role.Member;
             return Provider.Member.Add(obj);
         }
         return -2;
