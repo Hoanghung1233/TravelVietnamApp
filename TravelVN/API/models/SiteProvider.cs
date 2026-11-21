@@ -10,4 +10,6 @@ public class SiteProvider : BaseProvider
     public CategoryRepository Category => category ??= new CategoryRepository(Connection);
     MemberRepository? member;
     public MemberRepository Member => member ??= new MemberRepository(Connection);
+    DestinationRepository? destination;
+    public DestinationRepository Destination => destination ??= new DestinationRepository(Connection);
 }

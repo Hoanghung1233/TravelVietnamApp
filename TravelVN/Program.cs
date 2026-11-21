@@ -27,9 +27,19 @@ builder.Services.AddAuthentication(p =>
 builder.Services.AddScoped<SiteProvider>();
 
 builder.Services.AddMvc();
+builder.Services.AddCors(options => options.AddPolicy("FlutterLocal", policy =>
+    policy.WithOrigins("http://localhost:7357", "http://127.0.0.1:7357")
+        .AllowAnyHeader().AllowAnyMethod()));
 var app = builder.Build();
 
+if (app.Environment.IsDevelopment())
+{
+    app.UseCors("FlutterLocal");
+}
+
 app.UseStaticFiles();
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapDefaultControllerRoute();
 
