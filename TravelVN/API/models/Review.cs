@@ -1,4 +1,3 @@
-
 namespace TravelVN.API.Models;
 
 public class Review
@@ -14,4 +13,6 @@ public class Review
     public string? Comment { get; set; }
 
     public DateTime CreatedAt { get; set; }
+
+    public string ReviewerName { get; set; } = string.Empty;
 }

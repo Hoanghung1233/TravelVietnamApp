@@ -1,4 +1,3 @@
-
 using System.Data;
 using Dapper;
 
@@ -12,19 +11,26 @@ public class ReviewRepository : BaseRepository
 
     public IEnumerable<Review> GetReviews()
     {
-        string sql = "SELECT * FROM Review ORDER BY CreatedAt DESC";
+        string sql = @"SELECT R.*, M.Surname + N' ' + M.GivenName AS ReviewerName
+                       FROM Review R INNER JOIN Member M ON R.MemberId = M.MemberId
+                       ORDER BY R.CreatedAt DESC";
         return connection.Query<Review>(sql);
     }
 
     public Review? GetReview(int id)
     {
-        string sql = "SELECT * FROM Review WHERE ReviewId = @Id";
+        string sql = @"SELECT R.*, M.Surname + N' ' + M.GivenName AS ReviewerName
+                       FROM Review R INNER JOIN Member M ON R.MemberId = M.MemberId
+                       WHERE R.ReviewId = @Id";
         return connection.QuerySingleOrDefault<Review>(sql, new { id });
     }
 
     public IEnumerable<Review> GetReviewsByDestination(int destinationId)
     {
-        string sql = "SELECT * FROM Review WHERE DestinationId = @DestinationId ORDER BY CreatedAt DESC";
+        string sql = @"SELECT R.*, M.Surname + N' ' + M.GivenName AS ReviewerName
+                       FROM Review R INNER JOIN Member M ON R.MemberId = M.MemberId
+                       WHERE R.DestinationId = @DestinationId
+                       ORDER BY R.CreatedAt DESC";
         return connection.Query<Review>(sql, new { destinationId });
     }
 
