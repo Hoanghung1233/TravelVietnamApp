@@ -3,18 +3,21 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TravelVN.API.Models;
+using Microsoft.Data.SqlClient;
 
 namespace TravelVN.API.Controller;
 
 [ApiController, Route("api/[controller]")]
 public class ReviewController : BaseController
 {
+    [AllowAnonymous]
     [HttpGet]
     public IEnumerable<Review> GetReviews()
     {
         return Provider.Review.GetReviews();
     }
 
+    [AllowAnonymous]
     [HttpGet("{id}")]
     public IActionResult GetReview(int id)
     {
@@ -23,13 +26,14 @@ public class ReviewController : BaseController
         return Ok(obj);
     }
 
+    [AllowAnonymous]
     [HttpGet("destination/{destinationId}")]
     public IEnumerable<Review> GetReviewsByDestination(int destinationId)
     {
         return Provider.Review.GetReviewsByDestination(destinationId);
     }
 
-    [Authorize]
+    [Authorize(Roles = "Admin,Member")]
     [HttpPost]
     public IActionResult Add(CreateReviewRequest obj)
     {
@@ -39,11 +43,17 @@ public class ReviewController : BaseController
         if (!Provider.Review.DestinationExists(obj.DestinationId))
             return BadRequest("Địa điểm không tồn tại");
 
-        int id = Provider.Review.AddReview(memberId, obj);
-        return Ok(new { ReviewId = id });
+        try
+        {
+            int id = Provider.Review.AddReview(memberId, obj);
+            return Ok(new { ReviewId = id });
+        }
+        catch (SqlException ex) when (ex.Number == 2601 || ex.Number == 2627)
+        {
+            return Conflict("Bạn đã đánh giá địa điểm này rồi");
+        }
     }
-
-    [Authorize]
+    [Authorize(Roles = "Admin,Member")]
     [HttpPut("{id}")]
     public IActionResult Edit(int id, UpdateReviewRequest obj)
     {
@@ -56,7 +66,7 @@ public class ReviewController : BaseController
         return Ok(result);
     }
 
-    [Authorize]
+    [Authorize(Roles = "Admin,Member")]
     [HttpDelete("{id}")]
     public IActionResult Delete(int id)
     {
