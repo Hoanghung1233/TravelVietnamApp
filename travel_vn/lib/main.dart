@@ -5,7 +5,7 @@ import 'destination_admin.dart';
 import 'destination_map.dart';
 import 'favorite_repository.dart';
 import 'favorites_page.dart';
-
+import 'review_page.dart';
 void main() => runApp(const MyApp());
 
 class MyApp extends StatelessWidget {
@@ -402,6 +402,18 @@ class _DestinationDetailPageState extends State<DestinationDetailPage> {
             const SizedBox(height: 12),
             Text(item.text('description')),
             const SizedBox(height: 12),
+            OutlinedButton.icon(
+              icon: const Icon(Icons.star_outline),
+              label: const Text('Xem đánh giá'),
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => ReviewPage(
+                    destinationId: item.id,
+                    destinationName: item.name,
+                  ),
+                ),
+              ),
+            ),
             if (item.latitude != null && item.longitude != null)
               OutlinedButton.icon(
                 icon: const Icon(Icons.map_outlined),
