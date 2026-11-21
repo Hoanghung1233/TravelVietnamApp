@@ -9,15 +9,45 @@ public class MemberRepository : BaseRepository
     public MemberRepository(IDbConnection connection) : base(connection)
     {
     }
-    public int Add(Member obj)
+
+
+public int Add(Member obj)
+{
+    if (string.IsNullOrEmpty(obj.MemberId))
     {
-        if (string.IsNullOrEmpty(obj.MemberId))
-        {
-            obj.MemberId = Guid.NewGuid().ToString().Replace("-", string.Empty);
-        }
-        obj.Password = BCrypt.Net.BCrypt.HashPassword(obj.Password);
-        return connection.Execute("AddMember", obj, commandType: CommandType.StoredProcedure);
+        obj.MemberId = Guid.NewGuid()
+            .ToString()
+            .Replace("-", string.Empty);
     }
+
+    obj.Password = BCrypt.Net.BCrypt.HashPassword(obj.Password);
+
+    if (obj.CreatedAt == default)
+    {
+        obj.CreatedAt = DateTime.Now;
+    }
+
+    var parameters = new
+    {
+        obj.MemberId,
+        obj.GivenName,
+        obj.Surname,
+        obj.Email,
+        obj.Password,
+        Role = (short)obj.Role,
+        obj.Phone,
+        obj.Avatar,
+        obj.CreatedAt
+    };
+
+    return connection.Execute(
+        "AddMember",
+        parameters,
+        commandType: CommandType.StoredProcedure
+    );
+}
+
+
     public Member? GetMemberByEmail(string email)
     {
         string sql = "SELECT * FROM Member WHERE Email = @Email";
