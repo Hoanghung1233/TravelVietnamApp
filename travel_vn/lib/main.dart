@@ -3,8 +3,9 @@ import 'package:flutter/material.dart';
 import 'destination_repository.dart';
 import 'destination_admin.dart';
 import 'destination_map.dart';
+import 'favorite_repository.dart';
+import 'favorites_page.dart';
 import 'review_page.dart';
-
 void main() => runApp(const MyApp());
 
 class MyApp extends StatelessWidget {
@@ -34,6 +35,12 @@ class _DestinationsPageState extends State<DestinationsPage> {
   int? _category;
   String _keyword = '';
   String? _token;
+  String? _favoritesToken;
+
+  FavoriteRepository? get _favoriteRepository {
+    final token = _favoritesToken ?? _token;
+    return token == null ? null : FavoriteRepository(token);
+  }
 
   @override
   void initState() {
@@ -60,6 +67,43 @@ class _DestinationsPageState extends State<DestinationsPage> {
       ),
     );
     if (mounted && token != null) setState(() => _token = token);
+  }
+
+  Future<void> _openFavorites() async {
+    if (_favoriteRepository == null) {
+      final token = await Navigator.of(context).push<String>(
+        MaterialPageRoute(
+          builder: (_) => AdminLoginPage(
+            repository: _repository,
+            title: 'Đăng nhập để lưu yêu thích',
+          ),
+        ),
+      );
+      if (!mounted || token == null) return;
+      setState(() => _favoritesToken = token);
+    }
+
+    final favorites = _favoriteRepository!;
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (_) => FavoritesPage(
+          repository: favorites,
+          buildImage: (item) => DestinationImage(
+            repository: _repository,
+            path: item.text('image'),
+          ),
+          onOpen: (context, item) => Navigator.of(context).push<void>(
+            MaterialPageRoute(
+              builder: (_) => DestinationDetailPage(
+                repository: _repository,
+                item: item,
+                favorites: favorites,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   Future<void> _edit([Destination? item]) async {
@@ -120,6 +164,17 @@ class _DestinationsPageState extends State<DestinationsPage> {
     appBar: AppBar(
       title: const Text('Địa điểm du lịch'),
       actions: [
+        IconButton(
+          onPressed: _openFavorites,
+          icon: const Icon(Icons.favorite_border),
+          tooltip: 'Địa điểm yêu thích',
+        ),
+        if (_favoritesToken != null)
+          IconButton(
+            onPressed: () => setState(() => _favoritesToken = null),
+            icon: const Icon(Icons.person_off_outlined),
+            tooltip: 'Thoát tài khoản yêu thích',
+          ),
         if (_token == null)
           IconButton(
             onPressed: _signIn,
@@ -241,6 +296,7 @@ class _DestinationsPageState extends State<DestinationsPage> {
                                     builder: (_) => DestinationDetailPage(
                                       repository: _repository,
                                       item: item,
+                                      favorites: _favoriteRepository,
                                     ),
                                   ),
                                 ),
@@ -284,10 +340,12 @@ class DestinationDetailPage extends StatefulWidget {
     super.key,
     required this.repository,
     required this.item,
+    this.favorites,
   });
 
   final DestinationRepository repository;
   final Destination item;
+  final FavoriteRepository? favorites;
 
   @override
   State<DestinationDetailPage> createState() => _DestinationDetailPageState();
@@ -298,7 +356,13 @@ class _DestinationDetailPageState extends State<DestinationDetailPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: Text(widget.item.name)),
+    appBar: AppBar(
+      title: Text(widget.item.name),
+      actions: [
+        if (widget.favorites case final repository?)
+          FavoriteButton(repository: repository, destinationId: widget.item.id),
+      ],
+    ),
     body: FutureBuilder(
       future: _detail,
       builder: (context, snapshot) {
@@ -372,6 +436,7 @@ class _DestinationDetailPageState extends State<DestinationDetailPage> {
                   builder: (_) => RelatedDestinationsPage(
                     repository: widget.repository,
                     current: item,
+                    favorites: widget.favorites,
                   ),
                 ),
               ),
@@ -411,9 +476,11 @@ class RelatedDestinationsPage extends StatefulWidget {
     super.key,
     required this.repository,
     required this.current,
+    this.favorites,
   });
   final DestinationRepository repository;
   final Destination current;
+  final FavoriteRepository? favorites;
 
   @override
   State<RelatedDestinationsPage> createState() =>
@@ -482,6 +549,7 @@ class _RelatedDestinationsPageState extends State<RelatedDestinationsPage> {
                                 builder: (_) => DestinationDetailPage(
                                   repository: widget.repository,
                                   item: item,
+                                  favorites: widget.favorites,
                                 ),
                               ),
                             ),

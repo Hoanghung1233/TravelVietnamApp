@@ -14,4 +14,6 @@ public class SiteProvider : BaseProvider
     public ReviewRepository Review => review ??= new ReviewRepository(Connection);
     DestinationRepository? destination;
     public DestinationRepository Destination => destination ??= new DestinationRepository(Connection);
+FavoriteRepository? favorite;
+public FavoriteRepository Favorite => favorite ??= new FavoriteRepository(Connection);
 }
