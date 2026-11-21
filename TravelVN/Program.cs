@@ -1,3 +1,4 @@
+
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -23,14 +24,18 @@ builder.Services.AddAuthentication(p =>
     };
 });
 
-
+builder.Services.AddAuthorization();
 builder.Services.AddScoped<SiteProvider>();
-
 builder.Services.AddMvc();
+
 var app = builder.Build();
 
 app.UseStaticFiles();
 
+app.UseAuthentication();
+app.UseAuthorization();
+
+app.MapControllers();
 app.MapDefaultControllerRoute();
 
 app.Run();

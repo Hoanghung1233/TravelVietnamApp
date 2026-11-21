@@ -1,4 +1,3 @@
-
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -11,44 +10,93 @@ namespace TravelVN.API.controllers;
 [ApiController, Route("api/[controller]")]
 public class BookingController : BaseController
 {
-    // Thêm đơn đặt vé mới
     [HttpPost]
-    public int Add(Booking obj)
+    public ActionResult<int> Add(Booking obj)
     {
-        // Lấy UserId từ tài khoản đang đăng nhập
-        string? userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        string? memberId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(memberId))
+            return Unauthorized();
 
-        if (!int.TryParse(userId, out int id))
-            throw new UnauthorizedAccessException("Không xác định được người dùng.");
-
-        obj.UserId = id;
-
-        // Tạo mã đặt vé
+        obj.MemberId = memberId;
         obj.BookingCode = "BK" + Guid.NewGuid().ToString("N")[..10].ToUpper();
 
-        // Thêm đơn đặt vé vào cơ sở dữ liệu
-        return Provider.Booking.Add(obj);
+        return Ok(Provider.Booking.Add(obj));
     }
 
-    // Lấy danh sách đơn đặt vé của người dùng
     [HttpGet]
-    public IEnumerable<Booking>? GetBookings()
+    public ActionResult<IEnumerable<Booking>> GetBookings()
     {
-        string? userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        string? memberId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(memberId))
+            return Unauthorized();
 
-        if (int.TryParse(userId, out int id))
-            return Provider.Booking.GetBookings(id);
-
-        return null;
+        return Ok(Provider.Booking.GetBookings(memberId));
     }
 
-    // Cập nhật trạng thái đơn đặt vé
-    [HttpPut("updateStatus")]
-    public int UpdateStatus(Booking obj)
+    [HttpGet("search")]
+    public ActionResult<IEnumerable<Booking>> SearchBookings([FromQuery] string? keyword)
     {
-        return Provider.Booking.UpdateStatus(
-            obj.BookingId,
-            obj.Status ?? string.Empty
-        );
+        string? memberId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(memberId))
+            return Unauthorized();
+
+        if (string.IsNullOrWhiteSpace(keyword))
+            return BadRequest("Vui lòng nhập từ khóa tìm kiếm.");
+
+        return Ok(Provider.Booking.SearchBookings(memberId, keyword.Trim()));
+    }
+
+    [HttpGet("{id:int}")]
+    public ActionResult<Booking> GetBooking(int id)
+    {
+        string? memberId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(memberId))
+            return Unauthorized();
+
+        Booking? booking = Provider.Booking.GetBooking(id, memberId);
+        if (booking == null)
+            return NotFound();
+
+        return Ok(booking);
+    }
+
+    [Authorize(Roles = "Admin")]
+    [HttpGet("admin")]
+    public ActionResult<IEnumerable<Booking>> GetAllBookings()
+    {
+        return Ok(Provider.Booking.GetAllBookings());
+    }
+
+    [Authorize(Roles = "Admin")]
+    [HttpGet("admin/search")]
+    public ActionResult<IEnumerable<Booking>> SearchAllBookings(
+        [FromQuery] string? keyword,
+        [FromQuery] string? status,
+        [FromQuery] string? paymentStatus)
+    {
+        if (string.IsNullOrWhiteSpace(keyword) &&
+            string.IsNullOrWhiteSpace(status) &&
+            string.IsNullOrWhiteSpace(paymentStatus))
+            return BadRequest("Vui lòng nhập ít nhất một điều kiện tìm kiếm.");
+
+        return Ok(Provider.Booking.SearchAllBookings(
+            keyword?.Trim(), status?.Trim(), paymentStatus?.Trim()));
+    }
+
+    [Authorize(Roles = "Admin")]
+    [HttpPut("updateStatus")]
+    public ActionResult<int> UpdateStatus(Booking obj)
+    {
+        if (obj.BookingId <= 0)
+            return BadRequest("BookingId không hợp lệ.");
+
+        if (string.IsNullOrWhiteSpace(obj.Status) || obj.Status.Trim().Length > 20)
+            return BadRequest("Trạng thái không hợp lệ.");
+
+        int result = Provider.Booking.UpdateStatus(obj.BookingId, obj.Status.Trim());
+        if (result == 0)
+            return NotFound();
+
+        return Ok(result);
     }
 }

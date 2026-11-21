@@ -1,11 +1,10 @@
-
 namespace TravelVN.API.models;
 
 public class Booking
 {
     public int BookingId { get; set; }
     public string? BookingCode { get; set; }
-    public int UserId { get; set; }
+    public string? MemberId { get; set; }
     public int DestinationId { get; set; }
     public string? ContactName { get; set; }
     public string? ContactPhone { get; set; }
