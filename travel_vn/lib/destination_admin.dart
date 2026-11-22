@@ -47,29 +47,29 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Đăng nhập quản trị')),
-    body: ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        TextField(
-          controller: _email,
-          keyboardType: TextInputType.emailAddress,
-          decoration: const InputDecoration(labelText: 'Email'),
+        appBar: AppBar(title: const Text('Đăng nhập quản trị')),
+        body: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            TextField(
+              controller: _email,
+              keyboardType: TextInputType.emailAddress,
+              decoration: const InputDecoration(labelText: 'Email'),
+            ),
+            TextField(
+              controller: _password,
+              obscureText: true,
+              decoration: const InputDecoration(labelText: 'Mật khẩu'),
+            ),
+            if (_error != null) Text(_error!),
+            const SizedBox(height: 16),
+            FilledButton(
+              onPressed: _busy ? null : _login,
+              child: const Text('Đăng nhập'),
+            ),
+          ],
         ),
-        TextField(
-          controller: _password,
-          obscureText: true,
-          decoration: const InputDecoration(labelText: 'Mật khẩu'),
-        ),
-        if (_error != null) Text(_error!),
-        const SizedBox(height: 16),
-        FilledButton(
-          onPressed: _busy ? null : _login,
-          child: const Text('Đăng nhập'),
-        ),
-      ],
-    ),
-  );
+      );
 }
 
 class DestinationEditor extends StatefulWidget {
@@ -122,13 +122,19 @@ class _DestinationEditorState extends State<DestinationEditor> {
 
   Future<void> _pick() async {
     try {
-      final files = await FilePicker.pickFiles(
+      final result = await FilePicker.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['jpg', 'jpeg', 'png', 'webp'],
+        withData: true,
       );
-      if (mounted && files.isNotEmpty) setState(() => _image = files.first);
+
+      if (mounted && result != null && result.files.isNotEmpty) {
+        setState(() => _image = result.files.first);
+      }
     } catch (_) {
-      if (mounted) setState(() => _error = 'Không mở được bộ chọn ảnh');
+      if (mounted) {
+        setState(() => _error = 'Không mở được bộ chọn ảnh');
+      }
     }
   }
 
@@ -155,7 +161,7 @@ class _DestinationEditorState extends State<DestinationEditor> {
         widget.item?.id,
         fields,
         filename: chosenImage?.name,
-        image: await chosenImage?.readAsBytes(),
+        image: chosenImage?.bytes,
       );
       if (mounted) Navigator.pop(context, true);
     } catch (error) {
@@ -170,51 +176,51 @@ class _DestinationEditorState extends State<DestinationEditor> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(
-      title: Text(widget.item == null ? 'Thêm địa điểm' : 'Sửa địa điểm'),
-    ),
-    body: Form(
-      key: _form,
-      child: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          DropdownButtonFormField<int>(
-            initialValue: _categoryId,
-            decoration: const InputDecoration(labelText: 'Danh mục'),
-            items: [
-              for (final item in widget.categories)
-                DropdownMenuItem(
-                  value: item['categoryId'] as int,
-                  child: Text(item['categoryName'] as String),
+        appBar: AppBar(
+          title: Text(widget.item == null ? 'Thêm địa điểm' : 'Sửa địa điểm'),
+        ),
+        body: Form(
+          key: _form,
+          child: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              DropdownButtonFormField<int>(
+                initialValue: _categoryId,
+                decoration: const InputDecoration(labelText: 'Danh mục'),
+                items: [
+                  for (final item in widget.categories)
+                    DropdownMenuItem(
+                      value: item['categoryId'] as int,
+                      child: Text(item['categoryName'] as String),
+                    ),
+                ],
+                onChanged: _busy ? null : (value) => _categoryId = value,
+              ),
+              for (final entry in _labels.entries)
+                TextFormField(
+                  controller: _fields[entry.key],
+                  decoration: InputDecoration(labelText: entry.value),
+                  maxLines: entry.key == 'description' ? 4 : 1,
+                  validator: (value) {
+                    if ((entry.key == 'name' || entry.key == 'province') &&
+                        (value == null || value.trim().isEmpty)) {
+                      return 'Bắt buộc';
+                    }
+                    return null;
+                  },
                 ),
+              TextButton.icon(
+                onPressed: _busy ? null : _pick,
+                icon: const Icon(Icons.image_outlined),
+                label: Text(_image?.name ?? 'Chọn ảnh'),
+              ),
+              if (_error != null) Text(_error!),
+              FilledButton(
+                onPressed: _busy ? null : _save,
+                child: const Text('Lưu'),
+              ),
             ],
-            onChanged: _busy ? null : (value) => _categoryId = value,
           ),
-          for (final entry in _labels.entries)
-            TextFormField(
-              controller: _fields[entry.key],
-              decoration: InputDecoration(labelText: entry.value),
-              maxLines: entry.key == 'description' ? 4 : 1,
-              validator: (value) {
-                if ((entry.key == 'name' || entry.key == 'province') &&
-                    (value == null || value.trim().isEmpty)) {
-                  return 'Bắt buộc';
-                }
-                return null;
-              },
-            ),
-          TextButton.icon(
-            onPressed: _busy ? null : _pick,
-            icon: const Icon(Icons.image_outlined),
-            label: Text(_image?.name ?? 'Chọn ảnh'),
-          ),
-          if (_error != null) Text(_error!),
-          FilledButton(
-            onPressed: _busy ? null : _save,
-            child: const Text('Lưu'),
-          ),
-        ],
-      ),
-    ),
-  );
+        ),
+      );
 }

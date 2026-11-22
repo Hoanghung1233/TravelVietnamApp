@@ -1,22 +1,222 @@
 import 'package:flutter/material.dart';
 
+import 'admin_booking_page.dart';
+import 'booking_page.dart';
+import 'session_helper.dart';
 import 'destination_repository.dart';
 import 'destination_admin.dart';
 import 'destination_map.dart';
 import 'favorite_repository.dart';
 import 'favorites_page.dart';
 import 'review_page.dart';
-void main() => runApp(const MyApp());
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  runApp(const TravelBookingApp());
+}
+
+class TravelBookingApp extends StatelessWidget {
+  const TravelBookingApp({super.key});
 
   @override
-  Widget build(BuildContext context) => MaterialApp(
-    title: 'Travel Vietnam',
-    theme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal)),
-    home: const DestinationsPage(),
-  );
+  Widget build(BuildContext context) {
+    const primary = Color(0xFF087E75);
+    return MaterialApp(
+      title: 'Travel Vietnam',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(seedColor: primary),
+        scaffoldBackgroundColor: const Color(0xFFF7F9F9),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Color(0xFFF7F9F9),
+          foregroundColor: Color(0xFF172B2A),
+          centerTitle: false,
+        ),
+        inputDecorationTheme: const InputDecorationTheme(
+          filled: true,
+          fillColor: Colors.white,
+        ),
+      ),
+      home: const BookingAppShell(),
+    );
+  }
+}
+
+class BookingAppShell extends StatefulWidget {
+  const BookingAppShell({super.key});
+
+  @override
+  State<BookingAppShell> createState() => _BookingAppShellState();
+}
+
+class _BookingAppShellState extends State<BookingAppShell> {
+  int selectedIndex = 0;
+  bool hasToken = false;
+  String baseUrl = 'http://10.0.2.2:5149';
+  final tokenController = TextEditingController();
+  final urlController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSettings();
+  }
+
+  @override
+  void dispose() {
+    tokenController.dispose();
+    urlController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadSettings() async {
+    final token = await SessionHelper.token;
+    final url = await SessionHelper.baseUrl;
+    if (!mounted) return;
+    setState(() {
+      hasToken = token != null && token.isNotEmpty;
+      baseUrl = url ?? baseUrl;
+      urlController.text = baseUrl;
+      tokenController.text = token ?? '';
+    });
+  }
+
+  Future<void> _settings() async {
+    final formKey = GlobalKey<FormState>();
+    tokenController.text = await SessionHelper.token ?? '';
+    urlController.text = await SessionHelper.baseUrl ?? baseUrl;
+    if (!mounted) return;
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Kết nối Backend'),
+        content: Form(
+          key: formKey,
+          child: SizedBox(
+            width: 420,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  controller: urlController,
+                  keyboardType: TextInputType.url,
+                  decoration: const InputDecoration(
+                    labelText: 'Địa chỉ API',
+                    hintText: 'http://10.0.2.2:5149',
+                    prefixIcon: Icon(Icons.link),
+                  ),
+                  validator: (v) => (v == null || !v.startsWith('http'))
+                      ? 'Nhập URL bắt đầu bằng http:// hoặc https://'
+                      : null,
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: tokenController,
+                  minLines: 2,
+                  maxLines: 4,
+                  decoration: const InputDecoration(
+                    labelText: 'JWT Token',
+                    hintText: 'Dán token lấy từ API đăng nhập',
+                    prefixIcon: Icon(Icons.key),
+                    alignLabelWithHint: true,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Dùng Member Token khi ở màn hình Member; dùng Admin Token khi ở màn hình Admin. Token được lưu an toàn trên thiết bị.',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () async {
+              await SessionHelper.clearToken();
+              if (!dialogContext.mounted) return;
+              Navigator.pop(dialogContext);
+              await _loadSettings();
+            },
+            child: const Text('Xóa Token'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Đóng'),
+          ),
+          FilledButton(
+            onPressed: () async {
+              if (!formKey.currentState!.validate()) return;
+              await SessionHelper.saveBaseUrl(urlController.text.trim());
+              final token = tokenController.text.trim();
+              if (token.isEmpty) {
+                await SessionHelper.clearToken();
+              } else {
+                await SessionHelper.saveToken(token);
+              }
+              if (!dialogContext.mounted) return;
+              Navigator.pop(dialogContext);
+              await _loadSettings();
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Đã lưu cấu hình kết nối.')),
+                );
+              }
+            },
+            child: const Text('Lưu cấu hình'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    const pages = <Widget>[
+      DestinationsPage(),
+      BookingPage(),
+      AdminBookingPage(),
+    ];
+
+    return Scaffold(
+      body: SafeArea(
+        child: IndexedStack(
+          index: selectedIndex,
+          children: pages,
+        ),
+      ),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: selectedIndex,
+        onDestinationSelected: (index) {
+          setState(() => selectedIndex = index);
+        },
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.explore_outlined),
+            selectedIcon: Icon(Icons.explore),
+            label: 'Địa điểm',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.confirmation_number_outlined),
+            selectedIcon: Icon(Icons.confirmation_number),
+            label: 'Member',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.admin_panel_settings_outlined),
+            selectedIcon: Icon(Icons.admin_panel_settings),
+            label: 'Admin',
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton.small(
+        tooltip: 'Cấu hình API và Token',
+        onPressed: _settings,
+        child: const Icon(Icons.settings),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endTop,
+    );
+  }
 }
 
 class DestinationsPage extends StatefulWidget {
@@ -56,9 +256,9 @@ class _DestinationsPageState extends State<DestinationsPage> {
   }
 
   void _load(int page) => setState(() {
-    _page = page;
-    _destinations = _repository.list(page, _category, _keyword);
-  });
+        _page = page;
+        _destinations = _repository.list(page, _category, _keyword);
+      });
 
   Future<void> _signIn() async {
     final token = await Navigator.of(context).push<String>(
@@ -75,15 +275,16 @@ class _DestinationsPageState extends State<DestinationsPage> {
         MaterialPageRoute(
           builder: (_) => AdminLoginPage(
             repository: _repository,
-            title: 'Đăng nhập để lưu yêu thích',
           ),
         ),
       );
+
       if (!mounted || token == null) return;
       setState(() => _favoritesToken = token);
     }
 
     final favorites = _favoriteRepository!;
+
     await Navigator.of(context).push<void>(
       MaterialPageRoute(
         builder: (_) => FavoritesPage(
@@ -161,178 +362,181 @@ class _DestinationsPageState extends State<DestinationsPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(
-      title: const Text('Địa điểm du lịch'),
-      actions: [
-        IconButton(
-          onPressed: _openFavorites,
-          icon: const Icon(Icons.favorite_border),
-          tooltip: 'Địa điểm yêu thích',
-        ),
-        if (_favoritesToken != null)
-          IconButton(
-            onPressed: () => setState(() => _favoritesToken = null),
-            icon: const Icon(Icons.person_off_outlined),
-            tooltip: 'Thoát tài khoản yêu thích',
-          ),
-        if (_token == null)
-          IconButton(
-            onPressed: _signIn,
-            icon: const Icon(Icons.admin_panel_settings),
-            tooltip: 'Đăng nhập quản trị',
-          )
-        else ...[
-          IconButton(
-            onPressed: () => _edit(),
-            icon: const Icon(Icons.add),
-            tooltip: 'Thêm địa điểm',
-          ),
-          IconButton(
-            onPressed: () => setState(() => _token = null),
-            icon: const Icon(Icons.logout),
-            tooltip: 'Thoát quản trị',
-          ),
-        ],
-      ],
-    ),
-    body: Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: TextField(
-            controller: _search,
-            textInputAction: TextInputAction.search,
-            onSubmitted: (value) {
-              _keyword = value;
-              _load(1);
-            },
-            decoration: const InputDecoration(
-              labelText: 'Tìm theo tên hoặc tỉnh/thành',
-              prefixIcon: Icon(Icons.search),
+        appBar: AppBar(
+          title: const Text('Địa điểm du lịch'),
+          actions: [
+            IconButton(
+              onPressed: _openFavorites,
+              icon: const Icon(Icons.favorite_border),
+              tooltip: 'Địa điểm yêu thích',
             ),
-          ),
+            if (_favoritesToken != null)
+              IconButton(
+                onPressed: () => setState(() => _favoritesToken = null),
+                icon: const Icon(Icons.person_off_outlined),
+                tooltip: 'Thoát tài khoản yêu thích',
+              ),
+            if (_token == null)
+              IconButton(
+                onPressed: _signIn,
+                icon: const Icon(Icons.admin_panel_settings),
+                tooltip: 'Đăng nhập quản trị',
+              )
+            else ...[
+              IconButton(
+                onPressed: () => _edit(),
+                icon: const Icon(Icons.add),
+                tooltip: 'Thêm địa điểm',
+              ),
+              IconButton(
+                onPressed: () => setState(() => _token = null),
+                icon: const Icon(Icons.logout),
+                tooltip: 'Thoát quản trị',
+              ),
+            ],
+          ],
         ),
-        FutureBuilder(
-          future: _categories,
-          builder: (context, snapshot) => Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: DropdownButton<int>(
-              isExpanded: true,
-              value: _category ?? 0,
-              items: [
-                const DropdownMenuItem(
-                  value: 0,
-                  child: Text('Tất cả danh mục'),
+        body: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: TextField(
+                controller: _search,
+                textInputAction: TextInputAction.search,
+                onSubmitted: (value) {
+                  _keyword = value;
+                  _load(1);
+                },
+                decoration: const InputDecoration(
+                  labelText: 'Tìm theo tên hoặc tỉnh/thành',
+                  prefixIcon: Icon(Icons.search),
                 ),
-                for (final category
-                    in snapshot.data ?? <Map<String, dynamic>>[])
-                  DropdownMenuItem(
-                    value: category['categoryId'] as int,
-                    child: Text(category['categoryName'] as String),
-                  ),
-              ],
-              onChanged: (value) {
-                _category = value == 0 ? null : value;
-                _load(1);
-              },
+              ),
             ),
-          ),
-        ),
-        Expanded(
-          child: FutureBuilder(
-            future: _destinations,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState != ConnectionState.done) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              if (snapshot.hasError) {
-                return Center(
-                  child: TextButton(
-                    onPressed: () {
-                      _categories = _repository.categories();
-                      _load(_page);
-                    },
-                    child: const Text('Không tải được địa điểm. Thử lại'),
-                  ),
-                );
-              }
-              final items = snapshot.data!;
-              return Column(
-                children: [
-                  Expanded(
-                    child: items.isEmpty
-                        ? const Center(child: Text('Không tìm thấy địa điểm'))
-                        : ListView.builder(
-                            itemCount: items.length,
-                            itemBuilder: (context, index) {
-                              final item = items[index];
-                              return ListTile(
-                                leading: DestinationImage(
-                                  repository: _repository,
-                                  path: item.text('image'),
-                                  width: 72,
-                                ),
-                                title: Text(item.name),
-                                subtitle: Text(item.text('province')),
-                                trailing: _token == null
-                                    ? const Icon(Icons.chevron_right)
-                                    : PopupMenuButton<String>(
-                                        onSelected: (action) => action == 'edit'
-                                            ? _edit(item)
-                                            : _delete(item),
-                                        itemBuilder: (_) => const [
-                                          PopupMenuItem(
-                                            value: 'edit',
-                                            child: Text('Sửa'),
-                                          ),
-                                          PopupMenuItem(
-                                            value: 'delete',
-                                            child: Text('Xóa'),
-                                          ),
-                                        ],
-                                      ),
-                                onTap: () => Navigator.of(context).push(
-                                  MaterialPageRoute<void>(
-                                    builder: (_) => DestinationDetailPage(
-                                      repository: _repository,
-                                      item: item,
-                                      favorites: _favoriteRepository,
-                                    ),
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                  ),
-                  SafeArea(
-                    top: false,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        IconButton(
-                          tooltip: 'Trang trước',
-                          onPressed: _page == 1 ? null : () => _load(_page - 1),
-                          icon: const Icon(Icons.chevron_left),
-                        ),
-                        Text('Trang $_page'),
-                        IconButton(
-                          tooltip: 'Trang sau',
-                          onPressed: items.length < 10
-                              ? null
-                              : () => _load(_page + 1),
-                          icon: const Icon(Icons.chevron_right),
-                        ),
-                      ],
+            FutureBuilder(
+              future: _categories,
+              builder: (context, snapshot) => Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: DropdownButton<int>(
+                  isExpanded: true,
+                  value: _category ?? 0,
+                  items: [
+                    const DropdownMenuItem(
+                      value: 0,
+                      child: Text('Tất cả danh mục'),
                     ),
-                  ),
-                ],
-              );
-            },
-          ),
+                    for (final category
+                        in snapshot.data ?? <Map<String, dynamic>>[])
+                      DropdownMenuItem(
+                        value: category['categoryId'] as int,
+                        child: Text(category['categoryName'] as String),
+                      ),
+                  ],
+                  onChanged: (value) {
+                    _category = value == 0 ? null : value;
+                    _load(1);
+                  },
+                ),
+              ),
+            ),
+            Expanded(
+              child: FutureBuilder(
+                future: _destinations,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState != ConnectionState.done) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  if (snapshot.hasError) {
+                    return Center(
+                      child: TextButton(
+                        onPressed: () {
+                          _categories = _repository.categories();
+                          _load(_page);
+                        },
+                        child: const Text('Không tải được địa điểm. Thử lại'),
+                      ),
+                    );
+                  }
+                  final items = snapshot.data!;
+                  return Column(
+                    children: [
+                      Expanded(
+                        child: items.isEmpty
+                            ? const Center(
+                                child: Text('Không tìm thấy địa điểm'))
+                            : ListView.builder(
+                                itemCount: items.length,
+                                itemBuilder: (context, index) {
+                                  final item = items[index];
+                                  return ListTile(
+                                    leading: DestinationImage(
+                                      repository: _repository,
+                                      path: item.text('image'),
+                                      width: 72,
+                                    ),
+                                    title: Text(item.name),
+                                    subtitle: Text(item.text('province')),
+                                    trailing: _token == null
+                                        ? const Icon(Icons.chevron_right)
+                                        : PopupMenuButton<String>(
+                                            onSelected: (action) =>
+                                                action == 'edit'
+                                                    ? _edit(item)
+                                                    : _delete(item),
+                                            itemBuilder: (_) => const [
+                                              PopupMenuItem(
+                                                value: 'edit',
+                                                child: Text('Sửa'),
+                                              ),
+                                              PopupMenuItem(
+                                                value: 'delete',
+                                                child: Text('Xóa'),
+                                              ),
+                                            ],
+                                          ),
+                                    onTap: () => Navigator.of(context).push(
+                                      MaterialPageRoute<void>(
+                                        builder: (_) => DestinationDetailPage(
+                                          repository: _repository,
+                                          item: item,
+                                          favorites: _favoriteRepository,
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                      ),
+                      SafeArea(
+                        top: false,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            IconButton(
+                              tooltip: 'Trang trước',
+                              onPressed:
+                                  _page == 1 ? null : () => _load(_page - 1),
+                              icon: const Icon(Icons.chevron_left),
+                            ),
+                            Text('Trang $_page'),
+                            IconButton(
+                              tooltip: 'Trang sau',
+                              onPressed: items.length < 10
+                                  ? null
+                                  : () => _load(_page + 1),
+                              icon: const Icon(Icons.chevron_right),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ),
+          ],
         ),
-      ],
-    ),
-  );
+      );
 }
 
 class DestinationDetailPage extends StatefulWidget {
@@ -356,96 +560,98 @@ class _DestinationDetailPageState extends State<DestinationDetailPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(
-      title: Text(widget.item.name),
-      actions: [
-        if (widget.favorites case final repository?)
-          FavoriteButton(repository: repository, destinationId: widget.item.id),
-      ],
-    ),
-    body: FutureBuilder(
-      future: _detail,
-      builder: (context, snapshot) {
-        if (snapshot.hasError) {
-          return Center(
-            child: TextButton(
-              onPressed: () => setState(
-                () => _detail = widget.repository.detail(widget.item.id),
-              ),
-              child: const Text('Không tải được chi tiết. Thử lại'),
-            ),
-          );
-        }
-        final item = snapshot.data;
-        if (item == null) {
-          return const Center(child: CircularProgressIndicator());
-        }
+        appBar: AppBar(
+          title: Text(widget.item.name),
+          actions: [
+            if (widget.favorites case final repository?)
+              FavoriteButton(
+                  repository: repository, destinationId: widget.item.id),
+          ],
+        ),
+        body: FutureBuilder(
+          future: _detail,
+          builder: (context, snapshot) {
+            if (snapshot.hasError) {
+              return Center(
+                child: TextButton(
+                  onPressed: () => setState(
+                    () => _detail = widget.repository.detail(widget.item.id),
+                  ),
+                  child: const Text('Không tải được chi tiết. Thử lại'),
+                ),
+              );
+            }
+            final item = snapshot.data;
+            if (item == null) {
+              return const Center(child: CircularProgressIndicator());
+            }
 
-        return ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            for (final path in [item.text('image'), ...item.gallery])
-              if (path.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: DestinationImage(
-                    repository: widget.repository,
-                    path: path,
-                  ),
-                ),
-            Text(item.name, style: Theme.of(context).textTheme.headlineSmall),
-            Text(item.text('province')),
-            if (item.text('address').isNotEmpty) Text(item.text('address')),
-            if (item.text('openingHours').isNotEmpty)
-              Text('Giờ mở cửa: ${item.text('openingHours')}'),
-            Text('Giá vé: ${item.text('ticketPrice')} đ'),
-            const SizedBox(height: 12),
-            Text(item.text('description')),
-            const SizedBox(height: 12),
-            OutlinedButton.icon(
-              icon: const Icon(Icons.star_outline),
-              label: const Text('Xem đánh giá'),
-              onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => ReviewPage(
-                    destinationId: item.id,
-                    destinationName: item.name,
-                  ),
-                ),
-              ),
-            ),
-            if (item.latitude != null && item.longitude != null)
-              OutlinedButton.icon(
-                icon: const Icon(Icons.map_outlined),
-                label: const Text('Xem bản đồ'),
-                onPressed: () => Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => DestinationMapPage(
-                      name: item.name,
-                      latitude: item.latitude!,
-                      longitude: item.longitude!,
+            return ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                for (final path in [item.text('image'), ...item.gallery])
+                  if (path.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: DestinationImage(
+                        repository: widget.repository,
+                        path: path,
+                      ),
+                    ),
+                Text(item.name,
+                    style: Theme.of(context).textTheme.headlineSmall),
+                Text(item.text('province')),
+                if (item.text('address').isNotEmpty) Text(item.text('address')),
+                if (item.text('openingHours').isNotEmpty)
+                  Text('Giờ mở cửa: ${item.text('openingHours')}'),
+                Text('Giá vé: ${item.text('ticketPrice')} đ'),
+                const SizedBox(height: 12),
+                Text(item.text('description')),
+                const SizedBox(height: 12),
+                OutlinedButton.icon(
+                  icon: const Icon(Icons.star_outline),
+                  label: const Text('Xem đánh giá'),
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => ReviewPage(
+                        destinationId: item.id,
+                        destinationName: item.name,
+                      ),
                     ),
                   ),
                 ),
-              ),
-            OutlinedButton.icon(
-              icon: const Icon(Icons.explore_outlined),
-              label: const Text('Địa điểm liên quan'),
-              onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => RelatedDestinationsPage(
-                    repository: widget.repository,
-                    current: item,
-                    favorites: widget.favorites,
+                if (item.latitude != null && item.longitude != null)
+                  OutlinedButton.icon(
+                    icon: const Icon(Icons.map_outlined),
+                    label: const Text('Xem bản đồ'),
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => DestinationMapPage(
+                          name: item.name,
+                          latitude: item.latitude!,
+                          longitude: item.longitude!,
+                        ),
+                      ),
+                    ),
+                  ),
+                OutlinedButton.icon(
+                  icon: const Icon(Icons.explore_outlined),
+                  label: const Text('Địa điểm liên quan'),
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => RelatedDestinationsPage(
+                        repository: widget.repository,
+                        current: item,
+                        favorites: widget.favorites,
+                      ),
+                    ),
                   ),
                 ),
-              ),
-            ),
-          ],
-        );
-      },
-    ),
-  );
+              ],
+            );
+          },
+        ),
+      );
 }
 
 class DestinationImage extends StatelessWidget {
@@ -467,7 +673,8 @@ class DestinationImage extends StatelessWidget {
           repository.imageUrl(path).toString(),
           width: width,
           fit: BoxFit.cover,
-          errorBuilder: (_, _, _) => const Icon(Icons.broken_image_outlined),
+          errorBuilder: (context, error, stackTrace) =>
+              const Icon(Icons.broken_image_outlined),
         );
 }
 
@@ -493,94 +700,93 @@ class _RelatedDestinationsPageState extends State<RelatedDestinationsPage> {
   late Future<List<Destination>> _results = _fetch();
 
   Future<List<Destination>> _fetch() => widget.repository.list(
-    _page,
-    widget.current.categoryId,
-    '',
-    pageSize: _pageSize,
-  );
+        _page,
+        widget.current.categoryId,
+        '',
+        pageSize: _pageSize,
+      );
 
   void _load(int page) => setState(() {
-    _page = page;
-    _results = _fetch();
-  });
+        _page = page;
+        _results = _fetch();
+      });
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Địa điểm liên quan')),
-    body: FutureBuilder(
-      future: _results,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState != ConnectionState.done) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        if (snapshot.hasError) {
-          return Center(
-            child: TextButton(
-              onPressed: () => _load(_page),
-              child: const Text('Thử tải lại'),
-            ),
-          );
-        }
-        final page = snapshot.data!;
-        final items = page
-            .where((item) => item.id != widget.current.id)
-            .toList();
-        return Column(
-          children: [
-            Expanded(
-              child: items.isEmpty
-                  ? const Center(
-                      child: Text('Không có địa điểm khác ở trang này'),
-                    )
-                  : ListView(
-                      children: [
-                        for (final item in items)
-                          ListTile(
-                            leading: DestinationImage(
-                              repository: widget.repository,
-                              path: item.text('image'),
-                              width: 72,
-                            ),
-                            title: Text(item.name),
-                            subtitle: Text(item.text('province')),
-                            trailing: const Icon(Icons.chevron_right),
-                            onTap: () => Navigator.of(context).push(
-                              MaterialPageRoute<void>(
-                                builder: (_) => DestinationDetailPage(
+        appBar: AppBar(title: const Text('Địa điểm liên quan')),
+        body: FutureBuilder(
+          future: _results,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState != ConnectionState.done) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (snapshot.hasError) {
+              return Center(
+                child: TextButton(
+                  onPressed: () => _load(_page),
+                  child: const Text('Thử tải lại'),
+                ),
+              );
+            }
+            final page = snapshot.data!;
+            final items =
+                page.where((item) => item.id != widget.current.id).toList();
+            return Column(
+              children: [
+                Expanded(
+                  child: items.isEmpty
+                      ? const Center(
+                          child: Text('Không có địa điểm khác ở trang này'),
+                        )
+                      : ListView(
+                          children: [
+                            for (final item in items)
+                              ListTile(
+                                leading: DestinationImage(
                                   repository: widget.repository,
-                                  item: item,
-                                  favorites: widget.favorites,
+                                  path: item.text('image'),
+                                  width: 72,
+                                ),
+                                title: Text(item.name),
+                                subtitle: Text(item.text('province')),
+                                trailing: const Icon(Icons.chevron_right),
+                                onTap: () => Navigator.of(context).push(
+                                  MaterialPageRoute<void>(
+                                    builder: (_) => DestinationDetailPage(
+                                      repository: widget.repository,
+                                      item: item,
+                                      favorites: widget.favorites,
+                                    ),
+                                  ),
                                 ),
                               ),
-                            ),
-                          ),
-                      ],
-                    ),
-            ),
-            SafeArea(
-              top: false,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  IconButton(
-                    tooltip: 'Trang trước',
-                    onPressed: _page > 1 ? () => _load(_page - 1) : null,
-                    icon: const Icon(Icons.chevron_left),
+                          ],
+                        ),
+                ),
+                SafeArea(
+                  top: false,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      IconButton(
+                        tooltip: 'Trang trước',
+                        onPressed: _page > 1 ? () => _load(_page - 1) : null,
+                        icon: const Icon(Icons.chevron_left),
+                      ),
+                      Text('Trang $_page'),
+                      IconButton(
+                        tooltip: 'Trang sau',
+                        onPressed: page.length == _pageSize
+                            ? () => _load(_page + 1)
+                            : null,
+                        icon: const Icon(Icons.chevron_right),
+                      ),
+                    ],
                   ),
-                  Text('Trang $_page'),
-                  IconButton(
-                    tooltip: 'Trang sau',
-                    onPressed: page.length == _pageSize
-                        ? () => _load(_page + 1)
-                        : null,
-                    icon: const Icon(Icons.chevron_right),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        );
-      },
-    ),
-  );
+                ),
+              ],
+            );
+          },
+        ),
+      );
 }

@@ -7,7 +7,7 @@ void main() {
   testWidgets('Destination screen displays search and paging area', (
     tester,
   ) async {
-    await tester.pumpWidget(const MyApp());
+    await tester.pumpWidget(const TravelBookingApp());
     expect(find.text('Địa điểm du lịch'), findsOneWidget);
     expect(find.text('Tìm theo tên hoặc tỉnh/thành'), findsOneWidget);
   });

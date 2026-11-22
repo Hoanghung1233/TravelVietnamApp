@@ -1,3 +1,5 @@
+using TravelVN.API.models;
+
 namespace TravelVN.API.Models;
 
 
@@ -12,8 +14,13 @@ public class SiteProvider : BaseProvider
     public MemberRepository Member => member ??= new MemberRepository(Connection);
     ReviewRepository? review;
     public ReviewRepository Review => review ??= new ReviewRepository(Connection);
+
     DestinationRepository? destination;
     public DestinationRepository Destination => destination ??= new DestinationRepository(Connection);
-FavoriteRepository? favorite;
-public FavoriteRepository Favorite => favorite ??= new FavoriteRepository(Connection);
+
+    FavoriteRepository? favorite;
+    public FavoriteRepository Favorite => favorite ??= new FavoriteRepository(Connection);
+
+    BookingRepository? booking;
+    public BookingRepository Booking => booking ??= new BookingRepository(Connection);
 }
