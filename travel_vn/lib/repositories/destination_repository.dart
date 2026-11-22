@@ -1,33 +1,17 @@
 import 'dart:convert';
 
-import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import '../models/destination.dart';
 
-String get apiBase {
-  const configured = String.fromEnvironment('API_BASE_URL');
-  if (configured.isNotEmpty) return configured;
-  if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
-    return 'http://10.0.2.2:5149';
-  }
-  return 'http://localhost:5149';
-}
+import '../services/api_helper.dart';
 
 class DestinationRepository {
-  Uri imageUrl(String path) => Uri.parse('$apiBase/').resolve(path);
+  final _api = const ApiHelper();
 
-  Future<dynamic> _get(String path, [Map<String, String>? query]) async {
-    final uri = Uri.parse('$apiBase/api/$path').replace(queryParameters: query);
-    final response = await http.get(uri).timeout(const Duration(seconds: 10));
-    if (response.statusCode != 200) {
-      throw Exception('API trả lỗi ${response.statusCode}');
-    }
-    return jsonDecode(utf8.decode(response.bodyBytes));
-  }
-
+  Uri imageUrl(String path) => _api.asset(path);
   Future<List<Map<String, dynamic>>> categories() async =>
-      (await _get('Category') as List).cast<Map<String, dynamic>>();
+      (await _api.getJson('Category') as List).cast<Map<String, dynamic>>();
 
   Future<List<Destination>> list(
     int page,
@@ -35,7 +19,7 @@ class DestinationRepository {
     String keyword, {
     int pageSize = 10,
   }) async {
-    final data = await _get('Destination', {
+    final data = await _api.getJson('Destination', {
       'page': '$page',
       'pageSize': '$pageSize',
       if (categoryId != null) 'categoryId': '$categoryId',
@@ -49,7 +33,7 @@ class DestinationRepository {
   Future<String> login(String email, String password) async {
     final response = await http
         .post(
-          Uri.parse('$apiBase/api/Auth/login'),
+          _api.endpoint('Auth/login'),
           headers: {'Content-Type': 'application/json'},
           body: jsonEncode({'email': email, 'password': password}),
         )
@@ -73,7 +57,7 @@ class DestinationRepository {
     final path = id == null ? 'Destination' : 'Destination/$id';
     final request = http.MultipartRequest(
       id == null ? 'POST' : 'PUT',
-      Uri.parse('$apiBase/api/$path'),
+      _api.endpoint(path),
     );
     request.headers['Authorization'] = 'Bearer $token';
     request.fields.addAll(fields);
@@ -89,7 +73,7 @@ class DestinationRepository {
   Future<void> delete(String token, int id) async {
     final response = await http
         .delete(
-          Uri.parse('$apiBase/api/Destination/$id'),
+          _api.endpoint('Destination/$id'),
           headers: {'Authorization': 'Bearer $token'},
         )
         .timeout(const Duration(seconds: 10));
@@ -112,6 +96,7 @@ class DestinationRepository {
     }
   }
 
-  Future<Destination> detail(int id) async =>
-      Destination(await _get('Destination/$id') as Map<String, dynamic>);
+  Future<Destination> detail(int id) async => Destination(
+    await _api.getJson('Destination/$id') as Map<String, dynamic>,
+  );
 }

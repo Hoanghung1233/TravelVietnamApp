@@ -1,6 +1,8 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
+import '../widgets/bottom_navbar.dart';
+
 import '../models/destination.dart';
 import '../repositories/destination_repository.dart';
 
@@ -48,6 +50,7 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
+    bottomNavigationBar: const BottomNavbar(),
     appBar: AppBar(title: const Text('Đăng nhập quản trị')),
     body: ListView(
       padding: const EdgeInsets.all(16),
@@ -171,6 +174,7 @@ class _DestinationEditorState extends State<DestinationEditor> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
+    bottomNavigationBar: const BottomNavbar(),
     appBar: AppBar(
       title: Text(widget.item == null ? 'Thêm địa điểm' : 'Sửa địa điểm'),
     ),

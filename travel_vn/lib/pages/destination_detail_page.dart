@@ -3,8 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/destination.dart';
 import '../repositories/destination_repository.dart';
 import '../widgets/destination_image.dart';
-import 'destination_map.dart';
-import 'related_destinations_page.dart';
+import '../widgets/bottom_navbar.dart';
 
 class DestinationDetailPage extends StatefulWidget {
   const DestinationDetailPage({
@@ -25,6 +24,7 @@ class _DestinationDetailPageState extends State<DestinationDetailPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
+    bottomNavigationBar: const BottomNavbar(),
     appBar: AppBar(title: Text(widget.item.name)),
     body: FutureBuilder(
       future: _detail,
@@ -69,26 +69,16 @@ class _DestinationDetailPageState extends State<DestinationDetailPage> {
               OutlinedButton.icon(
                 icon: const Icon(Icons.map_outlined),
                 label: const Text('Xem bản đồ'),
-                onPressed: () => Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => DestinationMapPage(
-                      name: item.name,
-                      latitude: item.latitude!,
-                      longitude: item.longitude!,
-                    ),
-                  ),
-                ),
+                onPressed: () =>
+                    Navigator.of(context)
+                        .pushNamed('/destination-map', arguments: item),
               ),
             OutlinedButton.icon(
               icon: const Icon(Icons.explore_outlined),
               label: const Text('Địa điểm liên quan'),
-              onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => RelatedDestinationsPage(
-                    repository: widget.repository,
-                    current: item,
-                  ),
-                ),
+              onPressed: () => Navigator.of(context).pushNamed(
+                '/related-destinations',
+                arguments: (widget.repository, item),
               ),
             ),
           ],

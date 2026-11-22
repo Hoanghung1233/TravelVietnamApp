@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/destination.dart';
 import '../repositories/destination_repository.dart';
 import '../widgets/destination_image.dart';
-import 'destination_detail_page.dart';
+import '../widgets/bottom_navbar.dart';
 
 class RelatedDestinationsPage extends StatefulWidget {
   const RelatedDestinationsPage({
@@ -38,6 +38,7 @@ class _RelatedDestinationsPageState extends State<RelatedDestinationsPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
+    bottomNavigationBar: const BottomNavbar(),
     appBar: AppBar(title: const Text('Địa điểm liên quan')),
     body: FutureBuilder(
       future: _results,
@@ -76,13 +77,9 @@ class _RelatedDestinationsPageState extends State<RelatedDestinationsPage> {
                             title: Text(item.name),
                             subtitle: Text(item.text('province')),
                             trailing: const Icon(Icons.chevron_right),
-                            onTap: () => Navigator.of(context).push(
-                              MaterialPageRoute<void>(
-                                builder: (_) => DestinationDetailPage(
-                                  repository: widget.repository,
-                                  item: item,
-                                ),
-                              ),
+                            onTap: () => Navigator.of(context).pushNamed(
+                              '/destination-detail',
+                              arguments: (widget.repository, item),
                             ),
                           ),
                       ],

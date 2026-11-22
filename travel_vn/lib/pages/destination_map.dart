@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+
+import '../widgets/bottom_navbar.dart';
+
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -19,6 +22,7 @@ class DestinationMapPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final position = LatLng(latitude, longitude);
     return Scaffold(
+      bottomNavigationBar: const BottomNavbar(),
       appBar: AppBar(title: Text(name)),
       body: Column(
         children: [

@@ -1,17 +1,59 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:travel_vn/models/destination.dart';
 import 'package:travel_vn/pages/destination_detail_page.dart';
 import 'package:travel_vn/repositories/destination_repository.dart';
 import 'package:travel_vn/main.dart';
+import 'package:travel_vn/services/api_helper.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  test('API helper reads the bundled dotenv address', () async {
+    addTearDown(dotenv.clean);
+    await dotenv.load();
+    final configured = Uri.parse(dotenv.get('API_BASE_URL'));
+    final endpoint = const ApiHelper().endpoint('Destination');
+    expect(endpoint.port, configured.port);
+    expect(endpoint.path, endsWith('/api/Destination'));
+  });
+
   testWidgets('Destination screen displays search and paging area', (
     tester,
   ) async {
-    await tester.pumpWidget(const MyApp());
+    await tester.pumpWidget(const MainApp());
+    expect(find.text('Khám phá Việt Nam'), findsOneWidget);
     expect(find.text('Địa điểm du lịch'), findsOneWidget);
     expect(find.text('Tìm theo tên hoặc tỉnh/thành'), findsOneWidget);
+    await tester.tap(find.text('Khám phá'));
+    await tester.pump();
+    await tester.pumpAndSettle();
+    expect(
+      ModalRoute.of(tester.element(find.text('Khám phá')))?.settings.name,
+      '/destinations/search',
+    );
+
+    await tester.tap(find.text('Yêu thích'));
+    await tester.pumpAndSettle();
+    expect(find.text('Chức năng này đang chờ tích hợp.'), findsOneWidget);
+
+    await tester.tap(find.text('Cá nhân'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Quản trị địa điểm'));
+    await tester.pump();
+    await tester.pumpAndSettle();
+    expect(find.text('Quản trị địa điểm'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Đăng nhập quản trị'));
+    await tester.pump();
+    await tester.pumpAndSettle();
+    expect(find.text('Email'), findsOneWidget);
+
+    await tester.tap(find.text('Trang chủ'));
+    await tester.pump();
+    await tester.pumpAndSettle();
+    expect(find.text('Địa điểm du lịch'), findsOneWidget);
   });
   testWidgets('Related list excludes current destination and opens another', (
     tester,
@@ -26,7 +68,11 @@ void main() {
     final repository = StubDestinationRepository();
     await tester.pumpWidget(
       MaterialApp(
-        home: DestinationDetailPage(repository: repository, item: current),
+        routes: {
+          ...destinationRoutes,
+          '/': (_) =>
+              DestinationDetailPage(repository: repository, item: current),
+        },
       ),
     );
     await tester.pumpAndSettle();
