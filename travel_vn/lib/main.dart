@@ -1,26 +1,33 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import 'pages/admin_booking_page.dart';
 import 'pages/booking_page.dart';
 import 'services/session_helper.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(const TravelBookingApp());
+
+  await dotenv.load(fileName: '.env');
+
+  runApp(const MainApp());
 }
 
-class TravelBookingApp extends StatelessWidget {
-  const TravelBookingApp({super.key});
+class MainApp extends StatelessWidget {
+  const MainApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     const primary = Color(0xFF087E75);
+
     return MaterialApp(
-      title: 'TravelVN - Booking',
       debugShowCheckedModeBanner: false,
+      title: 'TravelVN',
       theme: ThemeData(
         useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(seedColor: primary),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: primary,
+        ),
         scaffoldBackgroundColor: const Color(0xFFF7F9F9),
         appBarTheme: const AppBarTheme(
           backgroundColor: Color(0xFFF7F9F9),
@@ -32,7 +39,12 @@ class TravelBookingApp extends StatelessWidget {
           fillColor: Colors.white,
         ),
       ),
-      home: const BookingAppShell(),
+      initialRoute: '/',
+      routes: {
+        '/': (context) => const BookingAppShell(),
+        '/booking': (context) => const BookingPage(),
+        '/admin-booking': (context) => const AdminBookingPage(),
+      },
     );
   }
 }
@@ -46,8 +58,9 @@ class BookingAppShell extends StatefulWidget {
 
 class _BookingAppShellState extends State<BookingAppShell> {
   int selectedIndex = 0;
-  bool hasToken = false;
-  String baseUrl = 'http://10.0.2.2:5149';
+
+  String baseUrl = dotenv.env['API_BASE_URL'] ?? 'http://10.0.2.2:5149';
+
   final tokenController = TextEditingController();
   final urlController = TextEditingController();
 
@@ -67,9 +80,10 @@ class _BookingAppShellState extends State<BookingAppShell> {
   Future<void> _loadSettings() async {
     final token = await SessionHelper.token;
     final url = await SessionHelper.baseUrl;
+
     if (!mounted) return;
+
     setState(() {
-      hasToken = token != null && token.isNotEmpty;
       baseUrl = url ?? baseUrl;
       urlController.text = baseUrl;
       tokenController.text = token ?? '';
@@ -78,9 +92,12 @@ class _BookingAppShellState extends State<BookingAppShell> {
 
   Future<void> _settings() async {
     final formKey = GlobalKey<FormState>();
+
     tokenController.text = await SessionHelper.token ?? '';
     urlController.text = await SessionHelper.baseUrl ?? baseUrl;
+
     if (!mounted) return;
+
     await showDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -100,8 +117,10 @@ class _BookingAppShellState extends State<BookingAppShell> {
                     hintText: 'http://10.0.2.2:5149',
                     prefixIcon: Icon(Icons.link),
                   ),
-                  validator: (v) => (v == null || !v.startsWith('http'))
-                      ? 'Nhập URL bắt đầu bằng http:// hoặc https://'
+                  validator: (v) => (v == null ||
+                          !(v.startsWith('http://') ||
+                              v.startsWith('https://')))
+                      ? 'Nhập URL hợp lệ'
                       : null,
                 ),
                 const SizedBox(height: 12),
@@ -118,7 +137,9 @@ class _BookingAppShellState extends State<BookingAppShell> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Dùng Member Token khi ở màn hình Member; dùng Admin Token khi ở màn hình Admin. Token được lưu an toàn trên thiết bị.',
+                  'Dùng Member Token khi ở màn hình Member; '
+                  'dùng Admin Token khi ở màn hình Admin. '
+                  'Token được lưu an toàn trên thiết bị.',
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],
@@ -129,7 +150,9 @@ class _BookingAppShellState extends State<BookingAppShell> {
           TextButton(
             onPressed: () async {
               await SessionHelper.clearToken();
+
               if (!dialogContext.mounted) return;
+
               Navigator.pop(dialogContext);
               await _loadSettings();
             },
@@ -142,19 +165,30 @@ class _BookingAppShellState extends State<BookingAppShell> {
           FilledButton(
             onPressed: () async {
               if (!formKey.currentState!.validate()) return;
-              await SessionHelper.saveBaseUrl(urlController.text.trim());
+
+              await SessionHelper.saveBaseUrl(
+                urlController.text.trim(),
+              );
+
               final token = tokenController.text.trim();
+
               if (token.isEmpty) {
                 await SessionHelper.clearToken();
               } else {
                 await SessionHelper.saveToken(token);
               }
+
               if (!dialogContext.mounted) return;
+
               Navigator.pop(dialogContext);
+
               await _loadSettings();
+
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Đã lưu cấu hình kết nối.')),
+                  const SnackBar(
+                    content: Text('Đã lưu cấu hình kết nối.'),
+                  ),
                 );
               }
             },
@@ -167,12 +201,22 @@ class _BookingAppShellState extends State<BookingAppShell> {
 
   @override
   Widget build(BuildContext context) {
-    final pages = const [BookingPage(), AdminBookingPage()];
+    final pages = const [
+      BookingPage(),
+      AdminBookingPage(),
+    ];
+
     return Scaffold(
-      body: SafeArea(child: selectedIndex == 0 ? pages[0] : pages[1]),
+      body: SafeArea(
+        child: selectedIndex == 0 ? pages[0] : pages[1],
+      ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: selectedIndex,
-        onDestinationSelected: (index) => setState(() => selectedIndex = index),
+        onDestinationSelected: (index) {
+          setState(() {
+            selectedIndex = index;
+          });
+        },
         destinations: const [
           NavigationDestination(
             icon: Icon(Icons.confirmation_number_outlined),
