@@ -23,6 +23,7 @@ class Review {
 
 class ReviewRepository {
   final _api = const ApiHelper();
+
   Future<List<Review>> getByDestination(int destinationId) async {
     final response = await http
         .get(
