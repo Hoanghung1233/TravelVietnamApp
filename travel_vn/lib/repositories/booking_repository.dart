@@ -2,8 +2,8 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
-import 'booking.dart';
-import 'session_helper.dart';
+import '../models/booking.dart';
+import '../services/session_helper.dart';
 
 class ApiException implements Exception {
   final int? statusCode;
@@ -74,7 +74,8 @@ class BookingRepository {
     ),
   ];
 
-  static Future<bool> get _demoMode async => (await SessionHelper.token)?.trim().isNotEmpty != true;
+  static Future<bool> get _demoMode async =>
+      (await SessionHelper.token)?.trim().isNotEmpty != true;
 
   static List<Booking> _memberDemoBookings() =>
       _demoBookings.where((b) => b.memberId == 'MB001').toList()
@@ -139,21 +140,35 @@ class BookingRepository {
 
   static Future<int> add(Booking booking) async {
     if (await _demoMode) {
-      final id = (_demoBookings.map((b) => b.bookingId).fold<int>(0, (a, b) => a > b ? a : b)) + 1;
-      _demoBookings.insert(0, Booking(
-        bookingId: id, bookingCode: 'DEMO${id.toString().padLeft(6, '0')}',
-        memberId: 'MB001', destinationId: booking.destinationId,
-        contactName: booking.contactName, contactPhone: booking.contactPhone,
-        visitDate: booking.visitDate, unitPrice: booking.unitPrice,
-        quantity: booking.quantity, totalPrice: booking.totalPrice,
-        paymentMethod: booking.paymentMethod, paymentStatus: booking.paymentStatus,
-        status: booking.status, note: booking.note, createdAt: booking.createdAt,
-      ));
+      final id = (_demoBookings
+              .map((b) => b.bookingId)
+              .fold<int>(0, (a, b) => a > b ? a : b)) +
+          1;
+      _demoBookings.insert(
+          0,
+          Booking(
+            bookingId: id,
+            bookingCode: 'DEMO${id.toString().padLeft(6, '0')}',
+            memberId: 'MB001',
+            destinationId: booking.destinationId,
+            contactName: booking.contactName,
+            contactPhone: booking.contactPhone,
+            visitDate: booking.visitDate,
+            unitPrice: booking.unitPrice,
+            quantity: booking.quantity,
+            totalPrice: booking.totalPrice,
+            paymentMethod: booking.paymentMethod,
+            paymentStatus: booking.paymentStatus,
+            status: booking.status,
+            note: booking.note,
+            createdAt: booking.createdAt,
+          ));
       return id;
     }
     final uri = Uri.parse('${await _url()}/api/Booking');
     final response = await http
-        .post(uri, headers: await _headers(), body: jsonEncode(booking.toCreateJson()))
+        .post(uri,
+            headers: await _headers(), body: jsonEncode(booking.toCreateJson()))
         .timeout(_timeout);
     _check(response);
     final decoded = jsonDecode(response.body);
@@ -163,40 +178,51 @@ class BookingRepository {
   static Future<List<Booking>> getBookings() async {
     if (await _demoMode) return _memberDemoBookings();
     final uri = Uri.parse('${await _url()}/api/Booking');
-    final response = await http.get(uri, headers: await _headers()).timeout(_timeout);
+    final response =
+        await http.get(uri, headers: await _headers()).timeout(_timeout);
     return _parseList(response);
   }
 
   static Future<List<Booking>> searchBookings(String keyword) async {
     if (await _demoMode) {
       final q = keyword.toLowerCase();
-      return _memberDemoBookings().where((b) =>
-        (b.bookingCode ?? '').toLowerCase().contains(q) ||
-        b.contactName.toLowerCase().contains(q) || b.contactPhone.contains(q)).toList();
+      return _memberDemoBookings()
+          .where((b) =>
+              (b.bookingCode ?? '').toLowerCase().contains(q) ||
+              b.contactName.toLowerCase().contains(q) ||
+              b.contactPhone.contains(q))
+          .toList();
     }
     final uri = Uri.parse('${await _url()}/api/Booking/search')
         .replace(queryParameters: {'keyword': keyword});
-    final response = await http.get(uri, headers: await _headers()).timeout(_timeout);
+    final response =
+        await http.get(uri, headers: await _headers()).timeout(_timeout);
     return _parseList(response);
   }
 
   static Future<Booking> getBooking(int id) async {
     if (await _demoMode) {
-      return _demoBookings.firstWhere((b) => b.bookingId == id && b.memberId == 'MB001',
-        orElse: () => throw const ApiException('Không tìm thấy đơn đặt vé mẫu.', statusCode: 404));
+      return _demoBookings.firstWhere(
+          (b) => b.bookingId == id && b.memberId == 'MB001',
+          orElse: () => throw const ApiException(
+              'Không tìm thấy đơn đặt vé mẫu.',
+              statusCode: 404));
     }
     final uri = Uri.parse('${await _url()}/api/Booking/$id');
-    final response = await http.get(uri, headers: await _headers()).timeout(_timeout);
+    final response =
+        await http.get(uri, headers: await _headers()).timeout(_timeout);
     _check(response);
     return Booking.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
   }
 
   static Future<List<Booking>> getAllBookings() async {
     if (await _demoMode) {
-      return [..._demoBookings]..sort((a, b) => b.bookingId.compareTo(a.bookingId));
+      return [..._demoBookings]
+        ..sort((a, b) => b.bookingId.compareTo(a.bookingId));
     }
     final uri = Uri.parse('${await _url()}/api/Booking/admin');
-    final response = await http.get(uri, headers: await _headers()).timeout(_timeout);
+    final response =
+        await http.get(uri, headers: await _headers()).timeout(_timeout);
     return _parseList(response);
   }
 
@@ -208,10 +234,15 @@ class BookingRepository {
     if (await _demoMode) {
       final q = keyword?.trim().toLowerCase() ?? '';
       return (await getAllBookings()).where((b) {
-        final matchesKeyword = q.isEmpty || (b.bookingCode ?? '').toLowerCase().contains(q) ||
-            b.contactName.toLowerCase().contains(q) || b.contactPhone.contains(q);
-        final matchesStatus = status == null || status.isEmpty || b.status == status;
-        final matchesPayment = paymentStatus == null || paymentStatus.isEmpty || b.paymentStatus == paymentStatus;
+        final matchesKeyword = q.isEmpty ||
+            (b.bookingCode ?? '').toLowerCase().contains(q) ||
+            b.contactName.toLowerCase().contains(q) ||
+            b.contactPhone.contains(q);
+        final matchesStatus =
+            status == null || status.isEmpty || b.status == status;
+        final matchesPayment = paymentStatus == null ||
+            paymentStatus.isEmpty ||
+            b.paymentStatus == paymentStatus;
         return matchesKeyword && matchesStatus && matchesPayment;
       }).toList();
     }
@@ -230,7 +261,8 @@ class BookingRepository {
     }
     final uri = Uri.parse('${await _url()}/api/Booking/admin/search')
         .replace(queryParameters: params);
-    final response = await http.get(uri, headers: await _headers()).timeout(_timeout);
+    final response =
+        await http.get(uri, headers: await _headers()).timeout(_timeout);
     return _parseList(response);
   }
 

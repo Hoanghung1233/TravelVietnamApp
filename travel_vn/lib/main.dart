@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import 'admin_booking_page.dart';
-import 'booking_page.dart';
-import 'session_helper.dart';
+import 'pages/admin_booking_page.dart';
+import 'pages/booking_page.dart';
+import 'services/session_helper.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();

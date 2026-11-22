@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import 'booking.dart';
-import 'booking_repository.dart';
-import 'booking_widgets.dart';
+import '../models/booking.dart';
+import '../repositories/booking_repository.dart';
+import '../widgets/booking_widgets.dart';
 
 class BookingDetailPage extends StatefulWidget {
   final int bookingId;
@@ -56,8 +56,14 @@ class _BookingDetailPageState extends State<BookingDetailPage> {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SizedBox(width: 135, child: Text(label, style: TextStyle(color: Colors.grey.shade600))),
-            Expanded(child: Text(value, style: TextStyle(fontWeight: bold ? FontWeight.bold : FontWeight.w500))),
+            SizedBox(
+                width: 135,
+                child:
+                    Text(label, style: TextStyle(color: Colors.grey.shade600))),
+            Expanded(
+                child: Text(value,
+                    style: TextStyle(
+                        fontWeight: bold ? FontWeight.bold : FontWeight.w500))),
           ],
         ),
       );
@@ -100,14 +106,21 @@ class _BookingDetailPageState extends State<BookingDetailPage> {
                 color: const Color(0xFFE8F5F3),
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                const Text('MÃ ĐẶT VÉ', style: TextStyle(fontSize: 11, letterSpacing: 1.2, color: Color(0xFF087E75))),
-                const SizedBox(height: 6),
-                Text(b.bookingCode ?? 'BK-${b.bookingId}',
-                    style: const TextStyle(fontSize: 21, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 12),
-                BookingStatusChip(status: b.status),
-              ]),
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('MÃ ĐẶT VÉ',
+                        style: TextStyle(
+                            fontSize: 11,
+                            letterSpacing: 1.2,
+                            color: Color(0xFF087E75))),
+                    const SizedBox(height: 6),
+                    Text(b.bookingCode ?? 'BK-${b.bookingId}',
+                        style: const TextStyle(
+                            fontSize: 21, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 12),
+                    BookingStatusChip(status: b.status),
+                  ]),
             ),
             const SizedBox(height: 18),
             _section('Thông tin chuyến đi', [
@@ -122,7 +135,8 @@ class _BookingDetailPageState extends State<BookingDetailPage> {
             _section('Thông tin liên hệ', [
               _line('Người liên hệ', b.contactName),
               _line('Số điện thoại', b.contactPhone),
-              _line('Ghi chú', (b.note?.isNotEmpty ?? false) ? b.note! : 'Không có'),
+              _line('Ghi chú',
+                  (b.note?.isNotEmpty ?? false) ? b.note! : 'Không có'),
             ]),
             const SizedBox(height: 14),
             _section('Thanh toán', [
@@ -142,8 +156,11 @@ class _BookingDetailPageState extends State<BookingDetailPage> {
         ),
         child: Padding(
           padding: const EdgeInsets.all(16),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(title,
+                style:
+                    const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             const Divider(height: 22),
             ...children,
           ]),

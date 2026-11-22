@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import 'booking.dart';
+import '../models/booking.dart';
 import 'booking_detail_page.dart';
-import 'booking_repository.dart';
-import 'booking_widgets.dart';
+import '../repositories/booking_repository.dart';
+import '../widgets/booking_widgets.dart';
 
 class AdminBookingPage extends StatefulWidget {
   const AdminBookingPage({super.key});
@@ -76,7 +76,8 @@ class _AdminBookingPageState extends State<AdminBookingPage> {
     final result = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Cập nhật ${booking.bookingCode ?? '#${booking.bookingId}'}'),
+        title:
+            Text('Cập nhật ${booking.bookingCode ?? '#${booking.bookingId}'}'),
         content: DropdownButtonFormField<String>(
           value: selected,
           decoration: const InputDecoration(labelText: 'Trạng thái đơn'),
@@ -86,8 +87,12 @@ class _AdminBookingPageState extends State<AdminBookingPage> {
           onChanged: (value) => selected = value ?? selected,
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Hủy')),
-          FilledButton(onPressed: () => Navigator.pop(context, selected), child: const Text('Lưu')),
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Hủy')),
+          FilledButton(
+              onPressed: () => Navigator.pop(context, selected),
+              child: const Text('Lưu')),
         ],
       ),
     );
@@ -126,7 +131,8 @@ class _AdminBookingPageState extends State<AdminBookingPage> {
               decoration: InputDecoration(
                 labelText: 'Mã đơn, tên hoặc số điện thoại',
                 prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                border:
+                    OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
               ),
               onSubmitted: (_) => _load(search: true),
             ),
@@ -141,11 +147,13 @@ class _AdminBookingPageState extends State<AdminBookingPage> {
                   decoration: const InputDecoration(
                     labelText: 'Trạng thái đơn',
                     border: OutlineInputBorder(),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+                    contentPadding:
+                        EdgeInsets.symmetric(horizontal: 10, vertical: 12),
                   ),
                   items: [
                     const DropdownMenuItem(value: null, child: Text('Tất cả')),
-                    ...statuses.map((s) => DropdownMenuItem(value: s, child: Text(s))),
+                    ...statuses
+                        .map((s) => DropdownMenuItem(value: s, child: Text(s))),
                   ],
                   onChanged: (v) => setState(() => statusFilter = v),
                 ),
@@ -158,11 +166,13 @@ class _AdminBookingPageState extends State<AdminBookingPage> {
                   decoration: const InputDecoration(
                     labelText: 'Thanh toán',
                     border: OutlineInputBorder(),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+                    contentPadding:
+                        EdgeInsets.symmetric(horizontal: 10, vertical: 12),
                   ),
                   items: [
                     const DropdownMenuItem(value: null, child: Text('Tất cả')),
-                    ...paymentStatuses.map((s) => DropdownMenuItem(value: s, child: Text(s))),
+                    ...paymentStatuses
+                        .map((s) => DropdownMenuItem(value: s, child: Text(s))),
                   ],
                   onChanged: (v) => setState(() => paymentFilter = v),
                 ),
@@ -172,7 +182,9 @@ class _AdminBookingPageState extends State<AdminBookingPage> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             child: Row(children: [
-              Expanded(child: Text('${bookings.length} đơn đặt vé', style: const TextStyle(fontWeight: FontWeight.bold))),
+              Expanded(
+                  child: Text('${bookings.length} đơn đặt vé',
+                      style: const TextStyle(fontWeight: FontWeight.bold))),
               TextButton.icon(
                 onPressed: () {
                   _keyword.clear();
@@ -198,17 +210,22 @@ class _AdminBookingPageState extends State<AdminBookingPage> {
                     ? Center(
                         child: Padding(
                           padding: const EdgeInsets.all(24),
-                          child: Column(mainAxisSize: MainAxisSize.min, children: [
-                            const Icon(Icons.error_outline, size: 44, color: Colors.red),
+                          child:
+                              Column(mainAxisSize: MainAxisSize.min, children: [
+                            const Icon(Icons.error_outline,
+                                size: 44, color: Colors.red),
                             const SizedBox(height: 10),
                             Text(error!, textAlign: TextAlign.center),
                             const SizedBox(height: 10),
-                            FilledButton(onPressed: () => _load(), child: const Text('Thử lại')),
+                            FilledButton(
+                                onPressed: () => _load(),
+                                child: const Text('Thử lại')),
                           ]),
                         ),
                       )
                     : bookings.isEmpty
-                        ? const EmptyBookings(message: 'Không có đơn đặt vé phù hợp.')
+                        ? const EmptyBookings(
+                            message: 'Không có đơn đặt vé phù hợp.')
                         : RefreshIndicator(
                             onRefresh: () => _load(),
                             child: ListView.builder(
@@ -221,43 +238,66 @@ class _AdminBookingPageState extends State<AdminBookingPage> {
                                   margin: const EdgeInsets.only(bottom: 12),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(16),
-                                    side: BorderSide(color: Theme.of(context).dividerColor),
+                                    side: BorderSide(
+                                        color: Theme.of(context).dividerColor),
                                   ),
                                   child: Padding(
                                     padding: const EdgeInsets.all(14),
-                                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                                      Row(children: [
-                                        Expanded(child: Text(booking.bookingCode ?? '#${booking.bookingId}',
-                                            style: const TextStyle(fontWeight: FontWeight.bold))),
-                                        BookingStatusChip(status: booking.status),
-                                      ]),
-                                      const SizedBox(height: 9),
-                                      Text(booking.contactName, style: const TextStyle(fontWeight: FontWeight.w600)),
-                                      const SizedBox(height: 4),
-                                      Text('${booking.contactPhone} • ${dateText(booking.visitDate)}',
-                                          style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
-                                      const SizedBox(height: 8),
-                                      Row(children: [
-                                        Text('${booking.quantity} vé'),
-                                        const Spacer(),
-                                        Text(money(booking.totalPrice),
-                                            style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF087E75))),
-                                      ]),
-                                      const Divider(height: 20),
-                                      Row(children: [
-                                        TextButton.icon(
-                                          onPressed: () => _openDetail(booking),
-                                          icon: const Icon(Icons.visibility_outlined, size: 18),
-                                          label: const Text('Chi tiết'),
-                                        ),
-                                        const Spacer(),
-                                        OutlinedButton.icon(
-                                          onPressed: () => _changeStatus(booking),
-                                          icon: const Icon(Icons.edit_outlined, size: 18),
-                                          label: const Text('Cập nhật'),
-                                        ),
-                                      ]),
-                                    ]),
+                                    child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Row(children: [
+                                            Expanded(
+                                                child: Text(
+                                                    booking.bookingCode ??
+                                                        '#${booking.bookingId}',
+                                                    style: const TextStyle(
+                                                        fontWeight:
+                                                            FontWeight.bold))),
+                                            BookingStatusChip(
+                                                status: booking.status),
+                                          ]),
+                                          const SizedBox(height: 9),
+                                          Text(booking.contactName,
+                                              style: const TextStyle(
+                                                  fontWeight: FontWeight.w600)),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                              '${booking.contactPhone} • ${dateText(booking.visitDate)}',
+                                              style: TextStyle(
+                                                  color: Colors.grey.shade600,
+                                                  fontSize: 13)),
+                                          const SizedBox(height: 8),
+                                          Row(children: [
+                                            Text('${booking.quantity} vé'),
+                                            const Spacer(),
+                                            Text(money(booking.totalPrice),
+                                                style: const TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                    color: Color(0xFF087E75))),
+                                          ]),
+                                          const Divider(height: 20),
+                                          Row(children: [
+                                            TextButton.icon(
+                                              onPressed: () =>
+                                                  _openDetail(booking),
+                                              icon: const Icon(
+                                                  Icons.visibility_outlined,
+                                                  size: 18),
+                                              label: const Text('Chi tiết'),
+                                            ),
+                                            const Spacer(),
+                                            OutlinedButton.icon(
+                                              onPressed: () =>
+                                                  _changeStatus(booking),
+                                              icon: const Icon(
+                                                  Icons.edit_outlined,
+                                                  size: 18),
+                                              label: const Text('Cập nhật'),
+                                            ),
+                                          ]),
+                                        ]),
                                   ),
                                 );
                               },

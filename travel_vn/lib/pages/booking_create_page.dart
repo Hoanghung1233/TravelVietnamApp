@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import 'booking.dart';
-import 'booking_repository.dart';
-import 'booking_widgets.dart';
+import '../models/booking.dart';
+import '../repositories/booking_repository.dart';
+import '../widgets/booking_widgets.dart';
 
 class BookingCreatePage extends StatefulWidget {
   const BookingCreatePage({super.key});
@@ -44,7 +44,8 @@ class _BookingCreatePageState extends State<BookingCreatePage> {
   Future<void> _pickDate() async {
     final selected = await showDatePicker(
       context: context,
-      initialDate: visitDate.isBefore(DateTime.now()) ? DateTime.now() : visitDate,
+      initialDate:
+          visitDate.isBefore(DateTime.now()) ? DateTime.now() : visitDate,
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 730)),
       helpText: 'Chọn ngày tham quan',
@@ -115,11 +116,14 @@ class _BookingCreatePageState extends State<BookingCreatePage> {
               child: const Row(children: [
                 Icon(Icons.info_outline, color: Color(0xFF087E75)),
                 SizedBox(width: 10),
-                Expanded(child: Text('Nhập mã địa điểm và giá vé theo dữ liệu Destination trong SQL Server.')),
+                Expanded(
+                    child: Text(
+                        'Nhập mã địa điểm và giá vé theo dữ liệu Destination trong SQL Server.')),
               ]),
             ),
             const SizedBox(height: 20),
-            const Text('Thông tin chuyến đi', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+            const Text('Thông tin chuyến đi',
+                style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
             const SizedBox(height: 14),
             TextFormField(
               controller: _destinationId,
@@ -127,7 +131,9 @@ class _BookingCreatePageState extends State<BookingCreatePage> {
               decoration: _decoration('Destination ID', Icons.place_outlined),
               validator: (v) {
                 final n = int.tryParse(v ?? '');
-                return n == null || n <= 0 ? 'Nhập Destination ID hợp lệ.' : null;
+                return n == null || n <= 0
+                    ? 'Nhập Destination ID hợp lệ.'
+                    : null;
               },
             ),
             const SizedBox(height: 12),
@@ -142,7 +148,8 @@ class _BookingCreatePageState extends State<BookingCreatePage> {
             const SizedBox(height: 12),
             TextFormField(
               controller: _unitPrice,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
               onChanged: (_) => setState(() {}),
               decoration: _decoration('Đơn giá (VNĐ)', Icons.payments_outlined),
               validator: (v) {
@@ -155,7 +162,8 @@ class _BookingCreatePageState extends State<BookingCreatePage> {
               controller: _quantity,
               keyboardType: TextInputType.number,
               onChanged: (_) => setState(() {}),
-              decoration: _decoration('Số lượng vé', Icons.confirmation_number_outlined),
+              decoration: _decoration(
+                  'Số lượng vé', Icons.confirmation_number_outlined),
               validator: (v) {
                 final n = int.tryParse(v ?? '');
                 return n == null || n <= 0 ? 'Số lượng phải lớn hơn 0.' : null;
@@ -164,29 +172,36 @@ class _BookingCreatePageState extends State<BookingCreatePage> {
             const SizedBox(height: 12),
             DropdownButtonFormField<String>(
               value: paymentMethod,
-              decoration: _decoration('Phương thức thanh toán', Icons.account_balance_wallet_outlined),
+              decoration: _decoration('Phương thức thanh toán',
+                  Icons.account_balance_wallet_outlined),
               items: const [
                 DropdownMenuItem(value: 'Cash', child: Text('Tiền mặt')),
-                DropdownMenuItem(value: 'BankTransfer', child: Text('Chuyển khoản')),
+                DropdownMenuItem(
+                    value: 'BankTransfer', child: Text('Chuyển khoản')),
                 DropdownMenuItem(value: 'EWallet', child: Text('Ví điện tử')),
               ],
               onChanged: (v) => setState(() => paymentMethod = v ?? 'Cash'),
             ),
             const SizedBox(height: 20),
-            const Text('Thông tin người liên hệ', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+            const Text('Thông tin người liên hệ',
+                style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
             const SizedBox(height: 14),
             TextFormField(
               controller: _contactName,
               textCapitalization: TextCapitalization.words,
               decoration: _decoration('Họ và tên', Icons.person_outline),
-              validator: (v) => (v == null || v.trim().isEmpty) ? 'Vui lòng nhập họ tên.' : null,
+              validator: (v) => (v == null || v.trim().isEmpty)
+                  ? 'Vui lòng nhập họ tên.'
+                  : null,
             ),
             const SizedBox(height: 12),
             TextFormField(
               controller: _phone,
               keyboardType: TextInputType.phone,
               decoration: _decoration('Số điện thoại', Icons.phone_outlined),
-              validator: (v) => (v == null || v.trim().isEmpty) ? 'Vui lòng nhập số điện thoại.' : null,
+              validator: (v) => (v == null || v.trim().isEmpty)
+                  ? 'Vui lòng nhập số điện thoại.'
+                  : null,
             ),
             const SizedBox(height: 12),
             TextFormField(
@@ -202,8 +217,14 @@ class _BookingCreatePageState extends State<BookingCreatePage> {
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Row(children: [
-                  const Expanded(child: Text('Tổng thanh toán', style: TextStyle(fontWeight: FontWeight.bold))),
-                  Text(money(total), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF087E75))),
+                  const Expanded(
+                      child: Text('Tổng thanh toán',
+                          style: TextStyle(fontWeight: FontWeight.bold))),
+                  Text(money(total),
+                      style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF087E75))),
                 ]),
               ),
             ),
@@ -213,7 +234,10 @@ class _BookingCreatePageState extends State<BookingCreatePage> {
               child: FilledButton.icon(
                 onPressed: submitting ? null : _submit,
                 icon: submitting
-                    ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2))
                     : const Icon(Icons.check_circle_outline),
                 label: Text(submitting ? 'Đang gửi...' : 'Xác nhận đặt vé'),
               ),

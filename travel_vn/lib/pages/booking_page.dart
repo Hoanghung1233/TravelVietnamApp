@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-import 'booking.dart';
+import '../models/booking.dart';
 import 'booking_create_page.dart';
 import 'booking_detail_page.dart';
-import 'booking_repository.dart';
-import 'booking_widgets.dart';
+import '../repositories/booking_repository.dart';
+import '../widgets/booking_widgets.dart';
 
 class BookingPage extends StatefulWidget {
   const BookingPage({super.key});
@@ -103,7 +103,8 @@ class _BookingPageState extends State<BookingPage> {
                   },
                   icon: const Icon(Icons.close),
                 ),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+                border:
+                    OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
               ),
             ),
           ),
@@ -113,10 +114,12 @@ class _BookingPageState extends State<BookingPage> {
               Expanded(
                 child: Text(
                   searched ? 'Kết quả tìm kiếm' : 'Lịch sử đặt vé',
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold, fontSize: 16),
                 ),
               ),
-              Text('${bookings.length} đơn', style: TextStyle(color: Colors.grey.shade600)),
+              Text('${bookings.length} đơn',
+                  style: TextStyle(color: Colors.grey.shade600)),
             ]),
           ),
           Expanded(
@@ -147,11 +150,13 @@ class _BookingPageState extends State<BookingPage> {
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Column(mainAxisSize: MainAxisSize.min, children: [
-            const Icon(Icons.cloud_off_outlined, size: 48, color: Colors.redAccent),
+            const Icon(Icons.cloud_off_outlined,
+                size: 48, color: Colors.redAccent),
             const SizedBox(height: 12),
             Text(error!, textAlign: TextAlign.center),
             const SizedBox(height: 12),
-            FilledButton(onPressed: () => _load(), child: const Text('Thử lại')),
+            FilledButton(
+                onPressed: () => _load(), child: const Text('Thử lại')),
           ]),
         ),
       );

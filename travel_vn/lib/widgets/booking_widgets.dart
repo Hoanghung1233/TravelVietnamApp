@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'booking.dart';
+import '../models/booking.dart';
 
 String money(num value) {
   final text = value.toStringAsFixed(0);
@@ -12,8 +12,7 @@ String money(num value) {
   return '${buffer.toString()} đ';
 }
 
-String dateText(DateTime date) =>
-    '${date.day.toString().padLeft(2, '0')}/'
+String dateText(DateTime date) => '${date.day.toString().padLeft(2, '0')}/'
     '${date.month.toString().padLeft(2, '0')}/'
     '${date.year}';
 
@@ -45,7 +44,8 @@ class BookingStatusChip extends StatelessWidget {
       ),
       child: Text(
         status,
-        style: TextStyle(color: color, fontWeight: FontWeight.w700, fontSize: 12),
+        style:
+            TextStyle(color: color, fontWeight: FontWeight.w700, fontSize: 12),
       ),
     );
   }
@@ -78,26 +78,33 @@ class BookingCard extends StatelessWidget {
                   Expanded(
                     child: Text(
                       booking.bookingCode ?? 'Booking #${booking.bookingId}',
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold, fontSize: 15),
                     ),
                   ),
                   BookingStatusChip(status: booking.status),
                 ],
               ),
               const SizedBox(height: 12),
-              Text(booking.contactName, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+              Text(booking.contactName,
+                  style: const TextStyle(
+                      fontSize: 16, fontWeight: FontWeight.w600)),
               const SizedBox(height: 5),
-              Text('Điểm đến ID: ${booking.destinationId} • ${dateText(booking.visitDate)}',
+              Text(
+                  'Điểm đến ID: ${booking.destinationId} • ${dateText(booking.visitDate)}',
                   style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
               const SizedBox(height: 12),
               Row(
                 children: [
-                  Icon(Icons.confirmation_number_outlined, size: 17, color: Colors.grey.shade600),
+                  Icon(Icons.confirmation_number_outlined,
+                      size: 17, color: Colors.grey.shade600),
                   const SizedBox(width: 6),
                   Text('${booking.quantity} vé'),
                   const Spacer(),
                   Text(money(booking.totalPrice),
-                      style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF087E75))),
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF087E75))),
                 ],
               ),
             ],
@@ -119,9 +126,11 @@ class EmptyBookings extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.confirmation_number_outlined, size: 58, color: Colors.grey.shade400),
+              Icon(Icons.confirmation_number_outlined,
+                  size: 58, color: Colors.grey.shade400),
               const SizedBox(height: 12),
-              Text(message, textAlign: TextAlign.center,
+              Text(message,
+                  textAlign: TextAlign.center,
                   style: TextStyle(color: Colors.grey.shade600)),
             ],
           ),
