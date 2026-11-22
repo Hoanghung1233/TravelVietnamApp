@@ -1,7 +1,8 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
-import 'destination_repository.dart';
+import '../models/destination.dart';
+import '../repositories/destination_repository.dart';
 
 class AdminLoginPage extends StatefulWidget {
   const AdminLoginPage({super.key, required this.repository});

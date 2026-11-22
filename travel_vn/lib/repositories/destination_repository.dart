@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
+import '../models/destination.dart';
+
 String get apiBase {
   const configured = String.fromEnvironment('API_BASE_URL');
   if (configured.isNotEmpty) return configured;
@@ -112,27 +114,4 @@ class DestinationRepository {
 
   Future<Destination> detail(int id) async =>
       Destination(await _get('Destination/$id') as Map<String, dynamic>);
-}
-
-class Destination {
-  const Destination(this.data);
-
-  final Map<String, dynamic> data;
-
-  int get id => data['destinationId'] as int;
-  int get categoryId => data['categoryId'] as int;
-  double? get latitude => (data['latitude'] as num?)?.toDouble();
-  double? get longitude => (data['longitude'] as num?)?.toDouble();
-  String get name => text('name');
-  String text(String key) => data[key]?.toString() ?? '';
-
-  List<String> get gallery {
-    if (text('gallery').isEmpty) return [];
-    try {
-      final decoded = jsonDecode(text('gallery'));
-      return decoded is List ? decoded.whereType<String>().toList() : [];
-    } on FormatException {
-      return [];
-    }
-  }
 }

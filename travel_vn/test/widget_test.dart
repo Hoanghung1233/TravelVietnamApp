@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:travel_vn/destination_repository.dart';
+import 'package:travel_vn/models/destination.dart';
+import 'package:travel_vn/pages/destination_detail_page.dart';
+import 'package:travel_vn/repositories/destination_repository.dart';
 import 'package:travel_vn/main.dart';
 
 void main() {
