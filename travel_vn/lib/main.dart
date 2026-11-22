@@ -5,6 +5,7 @@ import 'models/destination.dart';
 import 'pages/destination_admin.dart';
 import 'pages/destination_detail_page.dart';
 import 'pages/destination_map.dart';
+import 'pages/favorites_page.dart';
 import 'pages/home_page.dart';
 import 'pages/related_destinations_page.dart';
 import 'pages/tab_page.dart';
@@ -32,7 +33,7 @@ class MainApp extends StatelessWidget {
 final destinationRoutes = <String, WidgetBuilder>{
   '/': (_) => const DestinationsPage(),
   '/destinations/search': (_) => const DestinationsPage(focusSearch: true),
-  '/favorites': (_) => const TabPage(title: 'Yêu thích'),
+  '/favorites': (_) => const FavoritesPage(),
   '/bookings': (_) => const TabPage(title: 'Đặt chỗ'),
   '/account': (context) => TabPage(
     title: 'Cá nhân',
