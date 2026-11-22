@@ -11,17 +11,31 @@ dependencies:
   flutter:
     sdk: flutter
 
+  # API và cấu hình môi trường
   http: ^1.6.0
-  flutter_dotenv: ^6.0.1
+  flutter_dotenv: ^6.0.2
+
+  # Lưu trữ bảo mật
   flutter_secure_storage: ^11.2.0
 
+  # Giao diện
   cupertino_icons: ^1.0.8
+
+  # Chọn ảnh và tệp
   file_picker: ^13.4.1
+
+  # Bản đồ và tọa độ
   flutter_map: ^8.3.2
   latlong2: ^0.10.1
+
+  # Điều hướng URL
   url_launcher: ^6.3.3
+
+  # Đăng nhập Google và Facebook
   google_sign_in: ^7.2.0
   flutter_facebook_auth: ^7.3.3
+
+  # Mã hóa và bảo mật
   crypto: ^3.0.8
 
 dev_dependencies:
@@ -35,3 +49,4 @@ flutter:
 
   assets:
     - .env
+    - assets/vinh-ha-long.jpg
