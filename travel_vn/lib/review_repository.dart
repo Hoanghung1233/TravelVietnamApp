@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'services/api_helper.dart';
+import 'package:travel_vn/service/api_helper.dart';
 
 class Review {
   final int reviewId;
@@ -24,9 +24,11 @@ class Review {
 class ReviewRepository {
   final _api = const ApiHelper();
   Future<List<Review>> getByDestination(int destinationId) async {
-    final response = await http.get(
-      _api.endpoint('Review/destination/$destinationId'),
-    ).timeout(const Duration(seconds: 10));
+    final response = await http
+        .get(
+          _api.endpoint('Review/destination/$destinationId'),
+        )
+        .timeout(const Duration(seconds: 10));
 
     _check(response);
 
@@ -43,18 +45,20 @@ class ReviewRepository {
     int rating,
     String comment,
   ) async {
-    final response = await http.post(
-      _api.endpoint('Review'),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
-      body: jsonEncode({
-        'destinationId': destinationId,
-        'rating': rating,
-        'comment': comment,
-      }),
-    ).timeout(const Duration(seconds: 10));
+    final response = await http
+        .post(
+          _api.endpoint('Review'),
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+          body: jsonEncode({
+            'destinationId': destinationId,
+            'rating': rating,
+            'comment': comment,
+          }),
+        )
+        .timeout(const Duration(seconds: 10));
 
     _check(response);
 
@@ -68,17 +72,19 @@ class ReviewRepository {
     int rating,
     String comment,
   ) async {
-    final response = await http.put(
-      _api.endpoint('Review/$reviewId'),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
-      body: jsonEncode({
-        'rating': rating,
-        'comment': comment,
-      }),
-    ).timeout(const Duration(seconds: 10));
+    final response = await http
+        .put(
+          _api.endpoint('Review/$reviewId'),
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+          body: jsonEncode({
+            'rating': rating,
+            'comment': comment,
+          }),
+        )
+        .timeout(const Duration(seconds: 10));
 
     _check(response);
   }

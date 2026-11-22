@@ -5,7 +5,7 @@ import 'package:travel_vn/models/destination.dart';
 import 'package:travel_vn/pages/destination_detail_page.dart';
 import 'package:travel_vn/repositories/destination_repository.dart';
 import 'package:travel_vn/main.dart';
-import 'package:travel_vn/services/api_helper.dart';
+import 'package:travel_vn/service/api_helper.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

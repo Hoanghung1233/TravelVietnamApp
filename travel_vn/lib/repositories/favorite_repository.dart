@@ -1,9 +1,9 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
+import 'package:travel_vn/service/api_helper.dart';
 
 import '../models/destination.dart';
-import '../services/api_helper.dart';
 
 class FavoriteRepository {
   const FavoriteRepository(this.token);

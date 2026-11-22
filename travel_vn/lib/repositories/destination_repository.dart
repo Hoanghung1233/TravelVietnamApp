@@ -1,10 +1,9 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
+import 'package:travel_vn/service/api_helper.dart';
 
 import '../models/destination.dart';
-
-import '../services/api_helper.dart';
 
 class DestinationRepository {
   final _api = const ApiHelper();
@@ -71,12 +70,10 @@ class DestinationRepository {
   }
 
   Future<void> delete(String token, int id) async {
-    final response = await http
-        .delete(
-          _api.endpoint('Destination/$id'),
-          headers: {'Authorization': 'Bearer $token'},
-        )
-        .timeout(const Duration(seconds: 10));
+    final response = await http.delete(
+      _api.endpoint('Destination/$id'),
+      headers: {'Authorization': 'Bearer $token'},
+    ).timeout(const Duration(seconds: 10));
     await _check(response);
   }
 
@@ -97,6 +94,6 @@ class DestinationRepository {
   }
 
   Future<Destination> detail(int id) async => Destination(
-    await _api.getJson('Destination/$id') as Map<String, dynamic>,
-  );
+        await _api.getJson('Destination/$id') as Map<String, dynamic>,
+      );
 }
