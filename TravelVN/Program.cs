@@ -83,11 +83,11 @@ var app = builder.Build();
 // =========================================
 app.UseHttpsRedirection();
 
-app.UseStaticFiles();
-
 app.UseRouting();
 
 app.UseCors("AllowFlutter");
+
+app.UseStaticFiles();
 
 app.UseAuthentication();
 

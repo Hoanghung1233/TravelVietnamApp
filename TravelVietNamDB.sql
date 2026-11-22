@@ -307,8 +307,8 @@ FROM
       N'58 Quốc Tử Giám, Đống Đa, Hà Nội',
       N'Quần thể di tích lịch sử gắn liền với truyền thống hiếu học Việt Nam.',
       N'Văn Miếu - Quốc Tử Giám là trường đại học đầu tiên của Việt Nam, được xây dựng từ thời Lý. Khu di tích lưu giữ nhiều giá trị kiến trúc, văn hóa và giáo dục, trong đó có hệ thống bia tiến sĩ được UNESCO ghi danh.',
-      N'uploads/destinations/van-mieu.jpg',
-      N'["uploads/destinations/van-mieu-1.jpg","uploads/destinations/van-mieu-2.jpg"]',
+      N'uploads/destinations/van-mieu-quoc-tu-giam.jpg',
+      N'["uploads/destinations/van-mieu-quoc-tu-giam-1.jpg","uploads/destinations/van-mieu-quoc-tu-giam-2.jpg"]',
       21.0278, 105.8355, 70000,
       N'Tùy lịch hoạt động của di tích'
     ),
@@ -320,8 +320,8 @@ FROM
       N'Công viên địa chất toàn cầu Cao nguyên đá Đồng Văn',
       N'Vùng cao nguyên đá độc đáo với núi đá tai mèo và bản làng vùng cao.',
       N'Cao nguyên đá Đồng Văn sở hữu cảnh quan địa chất đặc sắc với những dãy núi đá vôi trùng điệp, cung đường đèo nổi tiếng và các bản làng mang đậm bản sắc văn hóa vùng cao. Đây là điểm đến hấp dẫn cho những chuyến du lịch khám phá.',
-      N'uploads/destinations/dong-van.jpg',
-      N'["uploads/destinations/dong-van-1.jpg","uploads/destinations/dong-van-2.jpg"]',
+      N'uploads/destinations/cao-nguyen-da-dong-van.jpg',
+      N'["uploads/destinations/cao-nguyen-da-dong-van-1.jpg","uploads/destinations/cao-nguyen-da-dong-van-2.jpg"]',
       23.2765, 105.3588, 0,
       N'Tham quan tự do'
     ),
@@ -377,7 +377,7 @@ FROM
       N'Đô thị cổ nổi tiếng với nhà cổ, đèn lồng và kiến trúc giao thoa văn hóa.',
       N'Phố cổ Hội An là di sản văn hóa thế giới với những ngôi nhà cổ, hội quán, chùa Cầu và các con phố đèn lồng đặc trưng. Nơi đây lưu giữ dấu ấn giao thương quốc tế trong nhiều thế kỷ và có nền ẩm thực phong phú.',
       N'uploads/destinations/pho-co-hoi-an.jpg',
-      N'["uploads/destinations/hoi-an-1.jpg","uploads/destinations/hoi-an-2.jpg"]',
+      N'["uploads/destinations/pho-co-hoi-an-1.jpg","uploads/destinations/pho-co-hoi-an-2.jpg"]',
       15.8801, 108.3380, 80000,
       N'Tùy khu vực và chương trình tham quan'
     ),
@@ -403,7 +403,7 @@ FROM
       N'Tổ hợp du lịch trên núi nổi bật với Cầu Vàng và hệ thống cáp treo.',
       N'Bà Nà Hills là khu du lịch nghỉ dưỡng và giải trí nổi tiếng của Đà Nẵng. Nơi đây có Cầu Vàng, Làng Pháp, vườn hoa, khu vui chơi trong nhà và hệ thống cáp treo đưa du khách lên độ cao lớn để ngắm cảnh núi rừng.',
       N'uploads/destinations/ba-na-hills.jpg',
-      N'["uploads/destinations/ba-na-1.jpg","uploads/destinations/ba-na-2.jpg"]',
+      N'["uploads/destinations/ba-na-hills-1.jpg","uploads/destinations/ba-na-hills-2.jpg"]',
       15.9977, 107.9880, 950000,
       N'Theo lịch hoạt động của khu du lịch'
     ),
@@ -429,7 +429,7 @@ FROM
       N'Bãi biển nổi tiếng với bờ cát trắng và làn nước trong xanh.',
       N'Biển Mỹ Khê là một trong những bãi biển nổi bật của Đà Nẵng. Nơi đây có bờ cát dài, không gian thoáng đãng và nhiều hoạt động như tắm biển, thể thao dưới nước và thưởng thức hải sản.',
       N'uploads/destinations/bien-my-khe.jpg',
-      N'["uploads/destinations/my-khe-1.jpg","uploads/destinations/my-khe-2.jpg"]',
+      N'["uploads/destinations/bien-my-khe-1.jpg","uploads/destinations/bien-my-khe-2.jpg"]',
       16.0544, 108.2470, 0,
       N'Tham quan tự do'
     ),
@@ -441,8 +441,8 @@ FROM
       N'Vườn quốc gia Phong Nha - Kẻ Bàng, tỉnh Quảng Trị',
       N'Vườn quốc gia nổi tiếng với hệ thống hang động và núi đá vôi.',
       N'Phong Nha - Kẻ Bàng sở hữu hệ sinh thái rừng nhiệt đới và hệ thống hang động kỳ vĩ. Du khách có thể khám phá động Phong Nha, động Thiên Đường và nhiều tuyến du lịch sinh thái, mạo hiểm.',
-      N'uploads/destinations/phong-nha.jpg',
-      N'["uploads/destinations/phong-nha-1.jpg","uploads/destinations/phong-nha-2.jpg"]',
+      N'uploads/destinations/phong-nha-ke-bang.jpg',
+      N'["uploads/destinations/phong-nha-ke-bang-1.jpg","uploads/destinations/phong-nha-ke-bang-2.jpg"]',
       17.5900, 106.2830, 150000,
       N'Tùy tuyến tham quan'
     ),
@@ -468,7 +468,7 @@ FROM
       N'Quần thể đền tháp Chăm Pa cổ được UNESCO công nhận.',
       N'Thánh địa Mỹ Sơn là quần thể kiến trúc tôn giáo của vương quốc Chăm Pa cổ. Những ngôi tháp gạch đỏ với hoa văn điêu khắc tinh xảo phản ánh trình độ kiến trúc và nghệ thuật độc đáo của người Chăm.',
       N'uploads/destinations/thanh-dia-my-son.jpg',
-      N'["uploads/destinations/my-son-1.jpg","uploads/destinations/my-son-2.jpg"]',
+      N'["uploads/destinations/thanh-dia-my-son-1.jpg","uploads/destinations/thanh-dia-my-son-2.jpg"]',
       15.7640, 108.1240, 150000,
       N'Tùy lịch tham quan di tích'
     ),
@@ -480,8 +480,8 @@ FROM
       N'Thị trấn Lăng Cô, thành phố Huế',
       N'Vịnh biển nổi bật với bãi cát trắng và núi non bao quanh.',
       N'Vịnh Lăng Cô nằm giữa dãy núi Bạch Mã và biển Đông, nổi bật với bãi cát trắng, đầm nước và cảnh quan thiên nhiên thơ mộng. Đây là điểm dừng chân hấp dẫn trên cung đường du lịch miền Trung.',
-      N'uploads/destinations/lang-co.jpg',
-      N'["uploads/destinations/lang-co-1.jpg","uploads/destinations/lang-co-2.jpg"]',
+      N'uploads/destinations/vinh-lang-co.jpg',
+      N'["uploads/destinations/vinh-lang-co-1.jpg","uploads/destinations/vinh-lang-co-2.jpg"]',
       16.2000, 108.0870, 0,
       N'Tham quan tự do'
     ),
@@ -524,7 +524,7 @@ FROM
       N'Công trình kiến trúc nổi bật mang phong cách Roman và Gothic.',
       N'Nhà thờ Đức Bà là một biểu tượng kiến trúc của TP. Hồ Chí Minh. Công trình nổi bật với hai tháp chuông, mặt tiền gạch đỏ và phong cách kiến trúc châu Âu cổ điển. Lưu ý việc tham quan bên trong phụ thuộc tình trạng trùng tu và lịch hoạt động.',
       N'uploads/destinations/nha-tho-duc-ba.jpg',
-      N'["uploads/destinations/duc-ba-1.jpg","uploads/destinations/duc-ba-2.jpg"]',
+      N'["uploads/destinations/nha-tho-duc-ba-1.jpg","uploads/destinations/nha-tho-duc-ba-2.jpg"]',
       10.7798, 106.6990, 0,
       N'Tham quan bên ngoài'
     ),
@@ -537,7 +537,7 @@ FROM
       N'Hệ thống đường hầm lịch sử dưới lòng đất trong thời kỳ kháng chiến.',
       N'Địa đạo Củ Chi là hệ thống đường hầm có giá trị lịch sử đặc biệt, từng được sử dụng làm nơi sinh hoạt, chiến đấu và liên lạc trong thời kỳ kháng chiến. Du khách có thể tìm hiểu cấu trúc địa đạo và các hiện vật lịch sử.',
       N'uploads/destinations/dia-dao-cu-chi.jpg',
-      N'["uploads/destinations/cu-chi-1.jpg","uploads/destinations/cu-chi-2.jpg"]',
+      N'["uploads/destinations/dia-dao-cu-chi-1.jpg","uploads/destinations/dia-dao-cu-chi-2.jpg"]',
       11.0510, 106.4930, 35000,
       N'Tùy khu vực tham quan'
     ),
@@ -550,7 +550,7 @@ FROM
       N'Khu chợ truyền thống nổi tiếng với ẩm thực và hàng hóa đa dạng.',
       N'Chợ Bến Thành là một trong những biểu tượng lâu đời của TP. Hồ Chí Minh. Khu chợ nổi bật với tháp đồng hồ ở cổng chính, các gian hàng thủ công mỹ nghệ, quà lưu niệm, thực phẩm và đặc sản địa phương.',
       N'uploads/destinations/cho-ben-thanh.jpg',
-      N'["uploads/destinations/ben-thanh-1.jpg","uploads/destinations/ben-thanh-2.jpg"]',
+      N'["uploads/destinations/cho-ben-thanh-1.jpg","uploads/destinations/cho-ben-thanh-2.jpg"]',
       10.7725, 106.6980, 0,
       N'Tùy giờ hoạt động của các gian hàng'
     ),
@@ -563,7 +563,7 @@ FROM
       N'Ngọn núi nổi tiếng với quần thể chùa và hệ thống cáp treo.',
       N'Núi Bà Đen là ngọn núi cao nổi bật của Nam Bộ. Nơi đây có cảnh quan thiên nhiên hùng vĩ, quần thể công trình tâm linh và hệ thống cáp treo hiện đại. Du khách có thể ngắm toàn cảnh đồng bằng từ trên cao.',
       N'uploads/destinations/nui-ba-den.jpg',
-      N'["uploads/destinations/ba-den-1.jpg","uploads/destinations/ba-den-2.jpg"]',
+      N'["uploads/destinations/nui-ba-den-1.jpg","uploads/destinations/nui-ba-den-2.jpg"]',
       11.3830, 106.1680, 0,
       N'Theo lịch hoạt động của cáp treo'
     ),
@@ -576,7 +576,7 @@ FROM
       N'Chợ nổi đặc trưng của văn hóa giao thương miền Tây sông nước.',
       N'Chợ nổi Cái Răng là điểm tham quan tiêu biểu của vùng Đồng bằng sông Cửu Long. Chợ hoạt động trên sông với nhiều ghe thuyền buôn bán nông sản, trái cây và món ăn địa phương. Thời điểm tham quan phổ biến là sáng sớm.',
       N'uploads/destinations/cho-noi-cai-rang.jpg',
-      N'["uploads/destinations/cai-rang-1.jpg","uploads/destinations/cai-rang-2.jpg"]',
+      N'["uploads/destinations/cho-noi-cai-rang-1.jpg","uploads/destinations/cho-noi-cai-rang-2.jpg"]',
       10.0050, 105.7510, 0,
       N'Hoạt động nhộn nhịp vào buổi sáng'
     ),
@@ -588,8 +588,8 @@ FROM
       N'Khu du lịch sinh thái Trà Sư, tỉnh An Giang',
       N'Rừng tràm ngập nước nổi tiếng với thảm bèo xanh và hệ sinh thái chim nước.',
       N'Rừng tràm Trà Sư là khu du lịch sinh thái đặc trưng của miền Tây Nam Bộ. Du khách có thể ngồi xuồng len lỏi qua những con rạch phủ bèo xanh, ngắm rừng tràm và quan sát nhiều loài chim sinh sống trong môi trường tự nhiên.',
-      N'uploads/destinations/tra-su.jpg',
-      N'["uploads/destinations/tra-su-1.jpg","uploads/destinations/tra-su-2.jpg"]',
+      N'uploads/destinations/rung-tram-tra-su.jpg',
+      N'["uploads/destinations/rung-tram-tra-su-1.jpg","uploads/destinations/rung-tram-tra-su-2.jpg"]',
       10.5710, 105.0360, 0,
       N'Tùy hoạt động của khu du lịch'
     ),
