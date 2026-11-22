@@ -120,6 +120,15 @@ public class MemberRepository : BaseRepository
             };
         }
 
+        if (member.Role == Role.Member && !member.IsEmailVerified)
+        {
+            return new LoginResult
+            {
+                Success = false,
+                Message = "Email chưa xác thực. Đăng ký lại với cùng email và mật khẩu để nhận mã mới."
+            };
+        }
+
         return new LoginResult
         {
             Success = true,

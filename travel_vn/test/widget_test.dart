@@ -40,15 +40,29 @@ void main() {
 
     await tester.tap(find.text('Cá nhân'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Quản trị địa điểm'));
-    await tester.pump();
-    await tester.pumpAndSettle();
-    expect(find.text('Quản trị địa điểm'), findsOneWidget);
+    expect(find.text('Tài khoản của tôi'), findsOneWidget);
+    expect(find.text('Đăng nhập'), findsOneWidget);
+    expect(find.text('Quản trị địa điểm'), findsNothing);
 
-    await tester.tap(find.byTooltip('Đăng nhập quản trị'));
-    await tester.pump();
+    await tester.tap(find.text('Đăng nhập'));
     await tester.pumpAndSettle();
-    expect(find.text('Email'), findsOneWidget);
+    expect(find.text('Google'), findsOneWidget);
+    expect(find.text('Facebook'), findsOneWidget);
+    expect(find.text('Zalo'), findsOneWidget);
+    await tester.ensureVisible(find.text('Quên mật khẩu?'));
+    await tester.tap(find.text('Quên mật khẩu?'));
+    await tester.pumpAndSettle();
+    expect(find.text('Quên mật khẩu'), findsOneWidget);
+    tester.state<NavigatorState>(find.byType(Navigator)).pop();
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Về trang chủ'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Khám phá Việt Nam'), findsOneWidget);
+
+    await tester.tap(find.text('Đặt chỗ'));
+    await tester.pumpAndSettle();
+    expect(find.text('Vui lòng đăng nhập để xem hoặc đặt vé.'), findsOneWidget);
 
     await tester.tap(find.text('Trang chủ'));
     await tester.pump();

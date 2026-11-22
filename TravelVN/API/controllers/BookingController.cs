@@ -17,10 +17,21 @@ public class BookingController : BaseController
         if (string.IsNullOrEmpty(memberId))
             return Unauthorized();
 
+        if (obj.Quantity <= 0 || obj.VisitDate.Date < DateTime.Today ||
+            string.IsNullOrWhiteSpace(obj.ContactName) || obj.ContactName.Trim().Length > 100 ||
+            string.IsNullOrWhiteSpace(obj.ContactPhone) || obj.ContactPhone.Trim().Length > 15 ||
+            obj.Note?.Length > 500 ||
+            obj.PaymentMethod is not ("Cash" or "BankTransfer" or "EWallet"))
+            return BadRequest("Thông tin đặt vé không hợp lệ.");
+
         obj.MemberId = memberId;
+        obj.ContactName = obj.ContactName.Trim();
+        obj.ContactPhone = obj.ContactPhone.Trim();
         obj.BookingCode = "BK" + Guid.NewGuid().ToString("N")[..10].ToUpper();
 
-        return Ok(Provider.Booking.Add(obj));
+        int? id = Provider.Booking.Add(obj);
+        if (id is null) return NotFound("Địa điểm không tồn tại.");
+        return Ok(id.Value);
     }
 
     [HttpGet]
@@ -90,7 +101,7 @@ public class BookingController : BaseController
         if (obj.BookingId <= 0)
             return BadRequest("BookingId không hợp lệ.");
 
-        if (string.IsNullOrWhiteSpace(obj.Status) || obj.Status.Trim().Length > 20)
+        if (obj.Status?.Trim() is not ("Pending" or "Confirmed" or "Cancelled" or "Completed"))
             return BadRequest("Trạng thái không hợp lệ.");
 
         int result = Provider.Booking.UpdateStatus(obj.BookingId, obj.Status.Trim());

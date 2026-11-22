@@ -32,7 +32,6 @@ dependencies:
   url_launcher: ^6.3.3
 
   # Đăng nhập Google và Facebook
-  google_sign_in: ^7.2.0
   flutter_facebook_auth: ^7.3.3
 
   # Mã hóa và bảo mật

@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+import '../service/api_helper.dart';
 import 'package:http/http.dart' as http;
 import 'package:travel_vn/models/auth_models.dart';
 
@@ -8,7 +8,7 @@ import 'package:travel_vn/models/login_model.dart';
 import 'package:travel_vn/services/session_helper.dart';
 
 class AuthRepository {
-  static String get baseUrl => '${dotenv.env['API_URL']}/api/Auth';
+  static String get baseUrl => const ApiHelper().endpoint('Auth').toString();
 
   // =========================================
   // HEADERS
@@ -41,12 +41,21 @@ class AuthRepository {
     );
 
     if (response.statusCode == 200) {
-      return jsonDecode(response.body);
+      return jsonDecode(utf8.decode(response.bodyBytes));
     }
 
-    throw Exception(
-      'Register failed: ${response.statusCode} ${response.body}',
-    );
+    if (response.statusCode >= 500) {
+      try {
+        final data = jsonDecode(utf8.decode(response.bodyBytes));
+        if (data is Map && data['message'] is String) {
+          throw Exception(data['message']);
+        }
+      } on FormatException {
+        // Unexpected server responses may contain diagnostic text.
+      }
+      throw Exception('Máy chủ chưa gửi được mã OTP. Vui lòng thử lại.');
+    }
+    throw Exception(_apiError(response, action: 'đăng ký'));
   }
 
   // =========================================
@@ -65,7 +74,7 @@ class AuthRepository {
     );
 
     if (response.statusCode == 200) {
-      return jsonDecode(response.body);
+      return jsonDecode(utf8.decode(response.bodyBytes));
     }
 
     throw Exception(
@@ -88,7 +97,7 @@ class AuthRepository {
 
     if (response.statusCode == 200) {
       LoginResult result = LoginResult.fromMap(
-        jsonDecode(response.body),
+        jsonDecode(utf8.decode(response.bodyBytes)),
       );
 
       if (result.success && result.token != null && result.token!.isNotEmpty) {
@@ -105,34 +114,61 @@ class AuthRepository {
 
   // =========================================
   // ĐĂNG NHẬP BẰNG MẠNG XÃ HỘI
-  // POST: /api/Auth/social-login
-  // =========================================
-  static Future<LoginResult> socialLogin(
-    SocialLoginModel obj,
-  ) async {
-    String url = '$baseUrl/social-login';
-
-    var response = await http.post(
-      Uri.parse(url),
-      headers: await getHeaders(),
-      body: jsonEncode(obj.toMap()),
+  // Bắt đầu đăng nhập mạng xã hội qua trình duyệt.
+  static Future<({Uri url, String key})> startBrowserLogin(
+      String provider) async {
+    final response = await http
+        .post(Uri.parse('$baseUrl/oauth/$provider/start'))
+        .timeout(const Duration(seconds: 10));
+    if (response.statusCode != 200) throw Exception(_apiError(response));
+    final data =
+        jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+    return (
+      url: Uri.parse(data['authorizationUrl'] as String),
+      key: data['attemptKey'] as String,
     );
+  }
 
-    if (response.statusCode == 200) {
-      LoginResult result = LoginResult.fromMap(
-        jsonDecode(response.body),
-      );
+  static Future<LoginResult?> pollBrowserLogin(String key) async {
+    final response = await http
+        .post(
+          Uri.parse('$baseUrl/oauth/result'),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({'attemptKey': key}),
+        )
+        .timeout(const Duration(seconds: 10));
 
-      if (result.success && result.token != null && result.token!.isNotEmpty) {
-        await SessionHelper.saveToken(result.token!);
+    if (response.statusCode == 202) return null;
+    if (response.statusCode != 200) throw Exception(_apiError(response));
+    return LoginResult.fromMap(jsonDecode(utf8.decode(response.bodyBytes)));
+  }
+
+  static String _apiError(http.Response response,
+      {String action = 'đăng nhập'}) {
+    try {
+      final data = jsonDecode(utf8.decode(response.bodyBytes));
+      if (data is Map<String, dynamic>) {
+        if (data['message'] case final String message) return message;
+        if (data['errors'] case final Map errors) {
+          for (final messages in errors.values) {
+            if (messages is List && messages.isNotEmpty) {
+              return messages.first.toString();
+            }
+          }
+        }
       }
-
-      return result;
+    } on FormatException {
+      final message =
+          utf8.decode(response.bodyBytes, allowMalformed: true).trim();
+      const knownMessages = {
+        'Email already exists': 'Email đã được đăng ký.',
+        'Password must have at least 8 characters':
+            'Mật khẩu phải có ít nhất 8 ký tự.',
+        'Email and password are required': 'Vui lòng nhập email và mật khẩu.',
+      };
+      if (knownMessages[message] case final translated?) return translated;
     }
-
-    throw Exception(
-      'Social login failed: ${response.statusCode} ${response.body}',
-    );
+    return 'Không thể $action (HTTP ${response.statusCode}).';
   }
 
   // =========================================
@@ -151,7 +187,7 @@ class AuthRepository {
     );
 
     if (response.statusCode == 200) {
-      return jsonDecode(response.body);
+      return jsonDecode(utf8.decode(response.bodyBytes));
     }
 
     throw Exception(
@@ -175,7 +211,7 @@ class AuthRepository {
     );
 
     if (response.statusCode == 200) {
-      return jsonDecode(response.body);
+      return jsonDecode(utf8.decode(response.bodyBytes));
     }
 
     throw Exception(
@@ -297,7 +333,7 @@ class AuthRepository {
 
     if (response.statusCode == 200) {
       await SessionHelper.logout();
-      return jsonDecode(response.body);
+      return jsonDecode(utf8.decode(response.bodyBytes));
     }
 
     throw Exception(

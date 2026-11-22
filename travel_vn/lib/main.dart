@@ -2,15 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 // Authentication và tài khoản
-import 'package:travel_vn/pages/admin_category_page.dart';
-import 'package:travel_vn/pages/admin_members_page.dart';
 import 'package:travel_vn/pages/category_page.dart';
-import 'package:travel_vn/pages/change_password_page.dart';
-import 'package:travel_vn/pages/forgot_password_page.dart';
 import 'package:travel_vn/pages/login_page.dart';
+import 'package:travel_vn/pages/forgot_password_page.dart';
 import 'package:travel_vn/pages/profile_page.dart';
 import 'package:travel_vn/pages/register_page.dart';
-import 'package:travel_vn/pages/update_email_page.dart';
 
 // Booking
 import 'package:travel_vn/pages/admin_booking_page.dart';
@@ -24,13 +20,14 @@ import 'package:travel_vn/pages/destination_map.dart';
 import 'package:travel_vn/pages/favorites_page.dart';
 import 'package:travel_vn/pages/home_page.dart';
 import 'package:travel_vn/pages/related_destinations_page.dart';
-import 'package:travel_vn/pages/tab_page.dart';
+import 'package:travel_vn/services/session_helper.dart';
 import 'package:travel_vn/repositories/destination_repository.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await dotenv.load(fileName: '.env');
+  await SessionHelper.initialize();
 
   runApp(const MainApp());
 }
@@ -40,23 +37,46 @@ class MainApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const primary = Color(0xFF087E75);
+    final colors = ColorScheme.fromSeed(seedColor: const Color(0xFF087E75));
+    final fieldBorder = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(14),
+      borderSide: BorderSide(color: colors.outlineVariant),
+    );
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'TravelVN',
       theme: ThemeData(
         useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(seedColor: primary),
+        colorScheme: colors,
         scaffoldBackgroundColor: const Color(0xFFF7F9F9),
+        filledButtonTheme: FilledButtonThemeData(
+          style: FilledButton.styleFrom(
+            minimumSize: const Size(48, 46),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          ),
+        ),
+        outlinedButtonTheme: OutlinedButtonThemeData(
+          style: OutlinedButton.styleFrom(
+            minimumSize: const Size(48, 44),
+            side: BorderSide(color: colors.outlineVariant),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          ),
+        ),
         appBarTheme: const AppBarTheme(
           backgroundColor: Color(0xFFF7F9F9),
           foregroundColor: Color(0xFF172B2A),
           centerTitle: false,
         ),
-        inputDecorationTheme: const InputDecorationTheme(
+        inputDecorationTheme: InputDecorationTheme(
           filled: true,
           fillColor: Colors.white,
+          border: fieldBorder,
+          enabledBorder: fieldBorder,
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         ),
       ),
 
@@ -66,8 +86,12 @@ class MainApp extends StatelessWidget {
       // Các đường dẫn điều hướng
       routes: {
         // Authentication
-        '/login': (context) => const LoginPage(),
+        '/login': (context) => LoginPage(
+              returnToCaller:
+                  ModalRoute.of(context)?.settings.arguments == true,
+            ),
         '/register': (context) => const RegisterPage(),
+        '/forgot-password': (_) => const ForgotPasswordPage(),
         '/profile': (context) => const ProfilePage(),
         '/categories': (context) => const CategoryPage(
               title: 'Danh mục du lịch',
@@ -95,15 +119,7 @@ final destinationRoutes = <String, WidgetBuilder>{
   '/bookings': (_) => const BookingPage(),
 
   // Trang cá nhân
-  '/account': (context) => TabPage(
-        title: 'Cá nhân',
-        action: FilledButton.icon(
-          onPressed: () =>
-              Navigator.of(context).pushNamed('/destinations/admin'),
-          icon: const Icon(Icons.admin_panel_settings_outlined),
-          label: const Text('Quản trị địa điểm'),
-        ),
-      ),
+  '/account': (_) => const ProfilePage(),
 
   // Quản trị địa điểm du lịch
   '/destinations/admin': (_) => const DestinationsPage(management: true),

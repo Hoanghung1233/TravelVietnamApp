@@ -20,12 +20,12 @@ public class SocialAuthService
     }
 
     // Đăng nhập Google
-    public async Task<SocialUser?> GoogleLogin(string token)
+    public async Task<SocialUser?> GoogleLogin(string token, string? expectedClientId = null)
     {
         try
         {
             string clientId =
-                configuration["Google:ClientId"]
+                expectedClientId ?? configuration["OAuth:google:ClientId"] ?? configuration["Google:ClientId"]
                 ?? throw new Exception("Missing Google ClientId");
 
             GoogleJsonWebSignature.Payload payload =
@@ -60,13 +60,10 @@ public class SocialAuthService
     {
         try
         {
-            string url =
-                "https://graph.facebook.com/me" +
-                "?fields=id,first_name,last_name,picture" +
-                "&access_token=" + Uri.EscapeDataString(token);
-
-            using HttpResponseMessage response =
-                await httpClient.GetAsync(url);
+            using var request = new HttpRequestMessage(
+                HttpMethod.Get, "https://graph.facebook.com/v27.0/me?fields=id,first_name,last_name,picture");
+            request.Headers.Authorization = new("Bearer", token);
+            using HttpResponseMessage response = await httpClient.SendAsync(request);
 
             if (!response.IsSuccessStatusCode)
                 return null;
@@ -104,13 +101,10 @@ public class SocialAuthService
     {
         try
         {
-            string url =
-                "https://graph.zalo.me/v2.0/me" +
-                "?fields=id,name,picture" +
-                "&access_token=" + Uri.EscapeDataString(token);
-
-            using HttpResponseMessage response =
-                await httpClient.GetAsync(url);
+            using var request = new HttpRequestMessage(
+                HttpMethod.Get, "https://graph.zalo.me/v2.0/me?fields=id,name,picture");
+            request.Headers.Add("access_token", token);
+            using HttpResponseMessage response = await httpClient.SendAsync(request);
 
             if (!response.IsSuccessStatusCode)
                 return null;
@@ -131,7 +125,9 @@ public class SocialAuthService
                 GivenName = name,
                 IsEmailVerified = false,
                 Avatar = root.TryGetProperty("picture", out var picture)
-                    ? picture.GetString()
+                    ? (picture.ValueKind == JsonValueKind.String ? picture.GetString() :
+                        picture.TryGetProperty("data", out var data) &&
+                        data.TryGetProperty("url", out var avatar) ? avatar.GetString() : null)
                     : null
             };
         }
@@ -144,11 +140,12 @@ public class SocialAuthService
     // Chọn nhà cung cấp đăng nhập
     public async Task<SocialUser?> Login(
         string provider,
-        string token)
+        string token,
+        string? expectedClientId = null)
     {
         return provider.ToLower() switch
         {
-            "google" => await GoogleLogin(token),
+            "google" => await GoogleLogin(token, expectedClientId),
             "facebook" => await FacebookLogin(token),
             "zalo" => await ZaloLogin(token),
             _ => null

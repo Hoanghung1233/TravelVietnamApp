@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+import '../service/api_helper.dart';
 import 'package:http/http.dart' as http;
 
 import 'package:travel_vn/models/member.dart';
@@ -21,16 +21,18 @@ class MemberRepository {
   // LẤY THÔNG TIN MEMBER ĐANG ĐĂNG NHẬP
   // GET: /api/Member/profile
   // =========================================
-  static Future<Member> getProfile() async {
-    String url = '${dotenv.env['API_URL']}/api/Member/profile';
+  static Future<Member> getProfile({String? token}) async {
+    String url = const ApiHelper().endpoint('Member/profile').toString();
 
     var response = await http.get(
       Uri.parse(url),
-      headers: await getHeaders(),
+      headers: token == null
+          ? await getHeaders()
+          : {'Authorization': 'Bearer $token'},
     );
 
     if (response.statusCode == 200) {
-      return Member.fromMap(jsonDecode(response.body));
+      return Member.fromMap(jsonDecode(utf8.decode(response.bodyBytes)));
     }
 
     throw Exception(
@@ -43,7 +45,7 @@ class MemberRepository {
   // PUT: /api/Member/profile
   // =========================================
   static Future<bool> updateProfile(Member obj) async {
-    String url = '${dotenv.env['API_URL']}/api/Member/profile';
+    String url = const ApiHelper().endpoint('Member/profile').toString();
 
     var response = await http.put(
       Uri.parse(url),
@@ -71,7 +73,7 @@ class MemberRepository {
   // ADMIN
   // =========================================
   static Future<List<Member>> getMembers() async {
-    String url = '${dotenv.env['API_URL']}/api/Admin/members';
+    String url = const ApiHelper().endpoint('Admin/members').toString();
 
     var response = await http.get(
       Uri.parse(url),
@@ -79,7 +81,7 @@ class MemberRepository {
     );
 
     if (response.statusCode == 200) {
-      List<dynamic> data = jsonDecode(response.body);
+      List<dynamic> data = jsonDecode(utf8.decode(response.bodyBytes));
 
       return data.map((p) => Member.fromMap(p)).toList();
     }
@@ -95,7 +97,7 @@ class MemberRepository {
   // ADMIN
   // =========================================
   static Future<Member> getMember(String id) async {
-    String url = '${dotenv.env['API_URL']}/api/Admin/members/$id';
+    String url = const ApiHelper().endpoint('Admin/members/$id').toString();
 
     var response = await http.get(
       Uri.parse(url),
@@ -103,7 +105,7 @@ class MemberRepository {
     );
 
     if (response.statusCode == 200) {
-      return Member.fromMap(jsonDecode(response.body));
+      return Member.fromMap(jsonDecode(utf8.decode(response.bodyBytes)));
     }
 
     throw Exception(
@@ -119,7 +121,7 @@ class MemberRepository {
   static Future<Map<String, dynamic>> updateRole(
     UpdateRoleModel obj,
   ) async {
-    String url = '${dotenv.env['API_URL']}/api/Admin/update-role';
+    String url = const ApiHelper().endpoint('Admin/update-role').toString();
 
     var response = await http.put(
       Uri.parse(url),
@@ -128,7 +130,7 @@ class MemberRepository {
     );
 
     if (response.statusCode == 200) {
-      return jsonDecode(response.body);
+      return jsonDecode(utf8.decode(response.bodyBytes));
     }
 
     throw Exception(

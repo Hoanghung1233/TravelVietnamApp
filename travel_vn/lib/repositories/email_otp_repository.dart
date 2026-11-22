@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+import '../service/api_helper.dart';
 import 'package:http/http.dart' as http;
 import 'package:travel_vn/models/auth_models.dart';
 import 'package:travel_vn/services/session_helper.dart';
@@ -18,7 +18,7 @@ class EmailOtpRepository {
   // 1. GỬI OTP XÁC MINH EMAIL KHI ĐĂNG KÝ
   // Backend: POST api/Auth/register
   static Future<Map<String, dynamic>> register(RegisterModel obj) async {
-    String url = '${dotenv.env['API_URL']}/api/Auth/register';
+    String url = const ApiHelper().endpoint('Auth/register').toString();
 
     var response = await http.post(
       Uri.parse(url),
@@ -27,7 +27,7 @@ class EmailOtpRepository {
     );
 
     if (response.statusCode == 200) {
-      return jsonDecode(response.body);
+      return jsonDecode(utf8.decode(response.bodyBytes));
     }
 
     throw Exception(response.body);
@@ -36,7 +36,7 @@ class EmailOtpRepository {
   // 2. XÁC MINH EMAIL
   // Backend: POST api/Auth/verify-email
   static Future<Map<String, dynamic>> verifyEmail(VerifyOtpModel obj) async {
-    String url = '${dotenv.env['API_URL']}/api/Auth/verify-email';
+    String url = const ApiHelper().endpoint('Auth/verify-email').toString();
 
     var response = await http.post(
       Uri.parse(url),
@@ -45,7 +45,7 @@ class EmailOtpRepository {
     );
 
     if (response.statusCode == 200) {
-      return jsonDecode(response.body);
+      return jsonDecode(utf8.decode(response.bodyBytes));
     }
 
     throw Exception(response.body);
@@ -54,7 +54,7 @@ class EmailOtpRepository {
   // 3. GỬI OTP QUÊN MẬT KHẨU
   // Backend: POST api/Auth/forgot-password
   static Future<Map<String, dynamic>> forgotPassword(SendOtpModel obj) async {
-    String url = '${dotenv.env['API_URL']}/api/Auth/forgot-password';
+    String url = const ApiHelper().endpoint('Auth/forgot-password').toString();
 
     var response = await http.post(
       Uri.parse(url),
@@ -63,7 +63,7 @@ class EmailOtpRepository {
     );
 
     if (response.statusCode == 200) {
-      return jsonDecode(response.body);
+      return jsonDecode(utf8.decode(response.bodyBytes));
     }
 
     throw Exception(response.body);
@@ -73,7 +73,7 @@ class EmailOtpRepository {
   // Backend: POST api/Auth/reset-password
   static Future<Map<String, dynamic>> resetPassword(
       ResetPasswordModel obj) async {
-    String url = '${dotenv.env['API_URL']}/api/Auth/reset-password';
+    String url = const ApiHelper().endpoint('Auth/reset-password').toString();
 
     var response = await http.post(
       Uri.parse(url),
@@ -82,7 +82,7 @@ class EmailOtpRepository {
     );
 
     if (response.statusCode == 200) {
-      return jsonDecode(response.body);
+      return jsonDecode(utf8.decode(response.bodyBytes));
     }
 
     throw Exception(response.body);
@@ -91,7 +91,8 @@ class EmailOtpRepository {
   // 5. GỬI OTP ĐỂ CẬP NHẬT EMAIL
   // Backend: POST api/Auth/send-email-verification
   static Future<String> sendEmailVerification(UpdateEmailModel obj) async {
-    String url = '${dotenv.env['API_URL']}/api/Auth/send-email-verification';
+    String url =
+        const ApiHelper().endpoint('Auth/send-email-verification').toString();
 
     var response = await http.post(
       Uri.parse(url),
@@ -109,7 +110,7 @@ class EmailOtpRepository {
   // 6. XÁC MINH VÀ CẬP NHẬT EMAIL MỚI
   // Backend: POST api/Auth/verify-new-email
   static Future<String> verifyNewEmail(VerifyOtpModel obj) async {
-    String url = '${dotenv.env['API_URL']}/api/Auth/verify-new-email';
+    String url = const ApiHelper().endpoint('Auth/verify-new-email').toString();
 
     var response = await http.post(
       Uri.parse(url),

@@ -4,6 +4,12 @@ class SessionHelper {
   static const FlutterSecureStorage storage = FlutterSecureStorage();
 
   static const String tokenKey = 'token';
+  static String? _token;
+  static String? get currentToken => _token;
+
+  static Future<void> initialize() async {
+    _token = await storage.read(key: tokenKey);
+  }
 
   // LƯU TOKEN
   static Future<void> saveToken(String token) async {
@@ -11,11 +17,12 @@ class SessionHelper {
       key: tokenKey,
       value: token,
     );
+    _token = token;
   }
 
   // LẤY TOKEN
   static Future<String?> getToken() async {
-    return await storage.read(key: tokenKey);
+    return _token;
   }
 
   // KIỂM TRA ĐĂNG NHẬP
@@ -26,6 +33,7 @@ class SessionHelper {
 
   // ĐĂNG XUẤT
   static Future<void> logout() async {
+    _token = null;
     await storage.delete(key: tokenKey);
   }
 }

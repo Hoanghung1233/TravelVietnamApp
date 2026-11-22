@@ -1,7 +1,9 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import '../repositories/destination_repository.dart';
+import '../services/session_helper.dart';
+import 'login_page.dart';
 import '../repositories/review_repository.dart';
+
 class ReviewPage extends StatefulWidget {
   const ReviewPage({
     super.key,
@@ -25,6 +27,8 @@ class _ReviewPageState extends State<ReviewPage> {
   @override
   void initState() {
     super.initState();
+    _token = SessionHelper.currentToken;
+    if (_token case final token?) _memberId = _getMemberId(token);
     _load();
   }
 
@@ -44,7 +48,8 @@ class _ReviewPageState extends State<ReviewPage> {
         utf8.decode(base64Url.decode(base64Url.normalize(parts[1]))),
       ) as Map<String, dynamic>;
       final id = json['nameid'] ??
-          json['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'] ??
+          json[
+              'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'] ??
           json['sub'];
       return id is String ? id : null;
     } catch (_) {
@@ -221,143 +226,84 @@ class _ReviewPageState extends State<ReviewPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(
-      title: Text('Đánh giá - ${widget.destinationName}'),
-      actions: [
-        IconButton(
-          tooltip: _token == null ? 'Đăng nhập' : 'Đăng xuất',
-          icon: Icon(_token == null ? Icons.login : Icons.logout),
-          onPressed: _token == null
-              ? () async { await _signIn(); }
-              : () => setState(() {
-                  _token = null;
-                  _memberId = null;
-                }),
-        ),
-        IconButton(
-          tooltip: 'Viết đánh giá',
-          icon: const Icon(Icons.rate_review_outlined),
-          onPressed: _addReview,
-        ),
-        IconButton(
-          tooltip: 'Tải lại',
-          icon: const Icon(Icons.refresh),
-          onPressed: () => setState(_load),
-        ),
-      ],
-    ),
-    body: FutureBuilder<List<Review>>(
-      future: _reviews,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState != ConnectionState.done) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        if (snapshot.hasError) {
-          return Center(
-            child: TextButton(
+        appBar: AppBar(
+          title: Text('Đánh giá - ${widget.destinationName}'),
+          actions: [
+            IconButton(
+              tooltip: _token == null ? 'Đăng nhập' : 'Đăng xuất',
+              icon: Icon(_token == null ? Icons.login : Icons.logout),
+              onPressed: _token == null
+                  ? () async {
+                      await _signIn();
+                    }
+                  : () async {
+                      await SessionHelper.logout();
+                      if (mounted) {
+                        setState(() {
+                          _token = null;
+                          _memberId = null;
+                        });
+                      }
+                    },
+            ),
+            IconButton(
+              tooltip: 'Viết đánh giá',
+              icon: const Icon(Icons.rate_review_outlined),
+              onPressed: _addReview,
+            ),
+            IconButton(
+              tooltip: 'Tải lại',
+              icon: const Icon(Icons.refresh),
               onPressed: () => setState(_load),
-              child: const Text('Không tải được đánh giá. Thử lại'),
             ),
-          );
-        }
+          ],
+        ),
+        body: FutureBuilder<List<Review>>(
+          future: _reviews,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState != ConnectionState.done) {
+              return const Center(child: CircularProgressIndicator());
+            }
 
-        final reviews = snapshot.data ?? [];
-        if (reviews.isEmpty) {
-          return const Center(
-            child: Text('Địa điểm này chưa có đánh giá nào'),
-          );
-        }
+            if (snapshot.hasError) {
+              return Center(
+                child: TextButton(
+                  onPressed: () => setState(_load),
+                  child: const Text('Không tải được đánh giá. Thử lại'),
+                ),
+              );
+            }
 
-        return Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 800),
-            child: ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: reviews.length,
-              itemBuilder: (context, index) => _reviewItem(reviews[index]),
-            ),
-          ),
-        );
-      },
-    ),
-  );
+            final reviews = snapshot.data ?? [];
+            if (reviews.isEmpty) {
+              return const Center(
+                child: Text('Địa điểm này chưa có đánh giá nào'),
+              );
+            }
+
+            return Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 800),
+                child: ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: reviews.length,
+                  itemBuilder: (context, index) => _reviewItem(reviews[index]),
+                ),
+              ),
+            );
+          },
+        ),
+      );
 }
 
-class ReviewLoginPage extends StatefulWidget {
+class ReviewLoginPage extends StatelessWidget {
   const ReviewLoginPage({super.key, this.title = 'Đăng nhập để đánh giá'});
 
   final String title;
 
   @override
-  State<ReviewLoginPage> createState() => _ReviewLoginPageState();
-}
-
-class _ReviewLoginPageState extends State<ReviewLoginPage> {
-  final _email = TextEditingController();
-  final _password = TextEditingController();
-  bool _busy = false;
-  String? _error;
-
-  @override
-  void dispose() {
-    _email.dispose();
-    _password.dispose();
-    super.dispose();
-  }
-
-  Future<void> _login() async {
-    setState(() {
-      _busy = true;
-      _error = null;
-    });
-
-    try {
-      final token = await DestinationRepository().login(
-        _email.text.trim(),
-        _password.text,
-      );
-      if (mounted) Navigator.pop(context, token);
-    } catch (_) {
-      if (mounted) {
-        setState(() {
-          _busy = false;
-          _error = 'Không đăng nhập được. Kiểm tra tài khoản và kết nối API.';
-        });
-      }
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: Text(widget.title)),
-    body: Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 450),
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            TextField(
-              controller: _email,
-              keyboardType: TextInputType.emailAddress,
-              decoration: const InputDecoration(labelText: 'Email'),
-            ),
-            TextField(
-              controller: _password,
-              obscureText: true,
-              decoration: const InputDecoration(labelText: 'Mật khẩu'),
-            ),
-            if (_error != null) Text(_error!),
-            const SizedBox(height: 16),
-            FilledButton(
-              onPressed: _busy ? null : _login,
-              child: Text(_busy ? 'Đang đăng nhập...' : 'Đăng nhập'),
-            ),
-          ],
-        ),
-      ),
-    ),
-  );
+  Widget build(BuildContext context) =>
+      LoginPage(returnToCaller: true, title: title);
 }
 
 class AddReviewPage extends StatefulWidget {
@@ -431,51 +377,50 @@ class _AddReviewPageState extends State<AddReviewPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(
-      title: Text(widget.review == null ? 'Viết đánh giá' : 'Sửa đánh giá'),
-    ),
-    body: Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 500),
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            const Text('Chọn số sao'),
-            Row(
+        appBar: AppBar(
+          title: Text(widget.review == null ? 'Viết đánh giá' : 'Sửa đánh giá'),
+        ),
+        body: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 500),
+            child: ListView(
+              padding: const EdgeInsets.all(16),
               children: [
-                for (int i = 1; i <= 5; i++)
-                  IconButton(
-                    onPressed: _busy
-                        ? null
-                        : () => setState(() => _rating = i),
-                    icon: Icon(
-                      i <= _rating ? Icons.star : Icons.star_border,
-                      color: Colors.amber,
-                    ),
+                const Text('Chọn số sao'),
+                Row(
+                  children: [
+                    for (int i = 1; i <= 5; i++)
+                      IconButton(
+                        onPressed:
+                            _busy ? null : () => setState(() => _rating = i),
+                        icon: Icon(
+                          i <= _rating ? Icons.star : Icons.star_border,
+                          color: Colors.amber,
+                        ),
+                      ),
+                  ],
+                ),
+                TextField(
+                  controller: _comment,
+                  maxLines: 4,
+                  decoration: const InputDecoration(
+                    labelText: 'Nhận xét',
+                    border: OutlineInputBorder(),
                   ),
+                ),
+                if (_error != null) Text(_error!),
+                const SizedBox(height: 16),
+                FilledButton(
+                  onPressed: _busy ? null : _save,
+                  child: Text(_busy
+                      ? 'Đang lưu...'
+                      : widget.review == null
+                          ? 'Gửi đánh giá'
+                          : 'Lưu thay đổi'),
+                ),
               ],
             ),
-            TextField(
-              controller: _comment,
-              maxLines: 4,
-              decoration: const InputDecoration(
-                labelText: 'Nhận xét',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            if (_error != null) Text(_error!),
-            const SizedBox(height: 16),
-            FilledButton(
-              onPressed: _busy ? null : _save,
-              child: Text(_busy
-                  ? 'Đang lưu...'
-                  : widget.review == null
-                      ? 'Gửi đánh giá'
-                      : 'Lưu thay đổi'),
-            ),
-          ],
+          ),
         ),
-      ),
-    ),
-  );
+      );
 }

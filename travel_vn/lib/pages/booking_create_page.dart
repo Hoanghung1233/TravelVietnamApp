@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 
 import '../models/booking.dart';
+import '../models/destination.dart';
+import '../repositories/destination_repository.dart';
 import '../repositories/booking_repository.dart';
 import '../widgets/booking_widgets.dart';
 
 class BookingCreatePage extends StatefulWidget {
-  const BookingCreatePage({super.key});
+  const BookingCreatePage({super.key, this.destination});
+  final Destination? destination;
 
   @override
   State<BookingCreatePage> createState() => _BookingCreatePageState();
@@ -13,12 +16,24 @@ class BookingCreatePage extends StatefulWidget {
 
 class _BookingCreatePageState extends State<BookingCreatePage> {
   final _formKey = GlobalKey<FormState>();
-  final _destinationId = TextEditingController();
   final _contactName = TextEditingController();
   final _phone = TextEditingController();
-  final _unitPrice = TextEditingController();
   final _quantity = TextEditingController(text: '1');
   final _note = TextEditingController();
+
+  late Destination? _destination = widget.destination;
+  late Future<List<Destination>> _destinations = _loadDestinations();
+
+  Future<List<Destination>> _loadDestinations() async {
+    final repository = DestinationRepository();
+    final items = <Destination>[];
+    const pageSize = 100;
+    for (var page = 1;; page++) {
+      final result = await repository.list(page, null, '', pageSize: pageSize);
+      items.addAll(result);
+      if (result.length < pageSize) return items;
+    }
+  }
 
   DateTime visitDate = DateTime.now().add(const Duration(days: 7));
   String paymentMethod = 'Cash';
@@ -26,17 +41,15 @@ class _BookingCreatePageState extends State<BookingCreatePage> {
 
   @override
   void dispose() {
-    _destinationId.dispose();
     _contactName.dispose();
     _phone.dispose();
-    _unitPrice.dispose();
     _quantity.dispose();
     _note.dispose();
     super.dispose();
   }
 
   double get total {
-    final price = double.tryParse(_unitPrice.text.replaceAll(',', '.')) ?? 0;
+    final price = double.tryParse(_destination?.text('ticketPrice') ?? '') ?? 0;
     final qty = int.tryParse(_quantity.text) ?? 0;
     return price * qty;
   }
@@ -50,21 +63,21 @@ class _BookingCreatePageState extends State<BookingCreatePage> {
       lastDate: DateTime.now().add(const Duration(days: 730)),
       helpText: 'Chọn ngày tham quan',
     );
-    if (selected != null) setState(() => visitDate = selected);
+    if (mounted && selected != null) setState(() => visitDate = selected);
   }
 
   Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate() || _destination == null) return;
     setState(() => submitting = true);
     try {
       final now = DateTime.now();
       final booking = Booking(
         bookingId: 0,
-        destinationId: int.parse(_destinationId.text.trim()),
+        destinationId: _destination!.id,
         contactName: _contactName.text.trim(),
         contactPhone: _phone.text.trim(),
         visitDate: visitDate,
-        unitPrice: double.parse(_unitPrice.text.trim().replaceAll(',', '.')),
+        unitPrice: double.tryParse(_destination!.text('ticketPrice')) ?? 0,
         quantity: int.parse(_quantity.text.trim()),
         totalPrice: total,
         paymentMethod: paymentMethod,
@@ -116,26 +129,49 @@ class _BookingCreatePageState extends State<BookingCreatePage> {
               child: const Row(children: [
                 Icon(Icons.info_outline, color: Color(0xFF087E75)),
                 SizedBox(width: 10),
-                Expanded(
-                    child: Text(
-                        'Nhập mã địa điểm và giá vé theo dữ liệu Destination trong SQL Server.')),
+                Expanded(child: Text('Chọn địa điểm để xem giá vé hiện tại.')),
               ]),
             ),
             const SizedBox(height: 20),
             const Text('Thông tin chuyến đi',
                 style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
             const SizedBox(height: 14),
-            TextFormField(
-              controller: _destinationId,
-              keyboardType: TextInputType.number,
-              decoration: _decoration('Destination ID', Icons.place_outlined),
-              validator: (v) {
-                final n = int.tryParse(v ?? '');
-                return n == null || n <= 0
-                    ? 'Nhập Destination ID hợp lệ.'
-                    : null;
-              },
-            ),
+            if (widget.destination case final selected?)
+              ListTile(
+                leading: const Icon(Icons.place_outlined),
+                title: Text(selected.name),
+                subtitle: Text(
+                    money(double.tryParse(selected.text('ticketPrice')) ?? 0)),
+              )
+            else
+              FutureBuilder(
+                future: _destinations,
+                builder: (context, snapshot) {
+                  if (snapshot.hasError) {
+                    return TextButton(
+                      onPressed: () =>
+                          setState(() => _destinations = _loadDestinations()),
+                      child: const Text('Không tải được địa điểm. Thử lại'),
+                    );
+                  }
+                  final items = snapshot.data;
+                  if (items == null) return const LinearProgressIndicator();
+                  return DropdownButtonFormField<Destination>(
+                    initialValue: _destination,
+                    isExpanded: true,
+                    decoration: _decoration('Địa điểm', Icons.place_outlined),
+                    items: [
+                      for (final item in items)
+                        DropdownMenuItem(value: item, child: Text(item.name)),
+                    ],
+                    onChanged: submitting
+                        ? null
+                        : (item) => setState(() => _destination = item),
+                    validator: (item) =>
+                        item == null ? 'Vui lòng chọn địa điểm.' : null,
+                  );
+                },
+              ),
             const SizedBox(height: 12),
             InkWell(
               onTap: _pickDate,
@@ -144,18 +180,6 @@ class _BookingCreatePageState extends State<BookingCreatePage> {
                 decoration: _decoration('Ngày tham quan', Icons.calendar_month),
                 child: Text(dateText(visitDate)),
               ),
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _unitPrice,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-              onChanged: (_) => setState(() {}),
-              decoration: _decoration('Đơn giá (VNĐ)', Icons.payments_outlined),
-              validator: (v) {
-                final n = double.tryParse((v ?? '').replaceAll(',', '.'));
-                return n == null || n <= 0 ? 'Đơn giá phải lớn hơn 0.' : null;
-              },
             ),
             const SizedBox(height: 12),
             TextFormField(
@@ -188,6 +212,7 @@ class _BookingCreatePageState extends State<BookingCreatePage> {
             const SizedBox(height: 14),
             TextFormField(
               controller: _contactName,
+              maxLength: 100,
               textCapitalization: TextCapitalization.words,
               decoration: _decoration('Họ và tên', Icons.person_outline),
               validator: (v) => (v == null || v.trim().isEmpty)
@@ -197,6 +222,7 @@ class _BookingCreatePageState extends State<BookingCreatePage> {
             const SizedBox(height: 12),
             TextFormField(
               controller: _phone,
+              maxLength: 15,
               keyboardType: TextInputType.phone,
               decoration: _decoration('Số điện thoại', Icons.phone_outlined),
               validator: (v) => (v == null || v.trim().isEmpty)

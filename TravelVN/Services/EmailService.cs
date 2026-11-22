@@ -8,13 +8,30 @@ public class EmailService
 {
     private readonly IConfiguration configuration;
 
-    public EmailService(IConfiguration configuration)
+    private readonly IWebHostEnvironment environment;
+
+    public EmailService(IConfiguration configuration, IWebHostEnvironment environment)
     {
         this.configuration = configuration;
+        this.environment = environment;
     }
+
+    private bool ConsoleDelivery => environment.IsDevelopment() &&
+        configuration.GetValue<bool>("Email:UseConsoleForDevelopment");
+
+    public bool CanSendOtp => ConsoleDelivery ||
+        (!string.IsNullOrWhiteSpace(configuration["Email:Host"]) &&
+         !string.IsNullOrWhiteSpace(configuration["Email:Username"]) &&
+         !string.IsNullOrWhiteSpace(configuration["Email:Password"]));
 
     public async Task SendOtp(string email, string code)
     {
+        if (ConsoleDelivery)
+        {
+            Console.WriteLine($"[TravelVN local OTP] {email}: {code}");
+            return;
+        }
+
         string host = configuration["Email:Host"]
             ?? throw new Exception("Missing Email:Host");
 

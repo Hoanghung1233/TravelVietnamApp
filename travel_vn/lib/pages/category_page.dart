@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+import '../service/api_helper.dart';
 import 'package:travel_vn/models/category.dart';
 import 'package:travel_vn/repositories/category_repository.dart';
 
@@ -70,32 +70,12 @@ class _CategoryPageState extends State<CategoryPage> {
 
   // Tạo URL ảnh từ Backend wwwroot/uploads/categories
   String getImageUrl(String imagePath) {
-    imagePath = imagePath.trim();
-
-    // Nếu database đã lưu URL đầy đủ
-    if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
-      return imagePath;
-    }
-
-    final apiUrl = dotenv.env['API_URL'];
-
-    if (apiUrl == null || apiUrl.isEmpty) {
-      debugPrint('Chưa cấu hình API_URL trong file .env');
-      return '';
-    }
-
-    // Lấy địa chỉ gốc của Backend
-    final baseUrl = apiUrl
-        .replaceFirst(RegExp(r'/api/?$'), '')
-        .replaceFirst(RegExp(r'/$'), '');
-
-    // Chuẩn hóa đường dẫn ảnh
-    String fileName = imagePath.replaceAll('\\', '/');
-
-    // Nếu đã có uploads/categories thì chỉ lấy tên file
-    fileName = fileName.split('/').last;
-
-    return '$baseUrl/uploads/categories/$fileName';
+    final path = imagePath.trim().replaceAll('\\', '/');
+    if (path.isEmpty) return '';
+    if (path.startsWith('http://') || path.startsWith('https://')) return path;
+    return const ApiHelper()
+        .asset('uploads/categories/${path.split('/').last}')
+        .toString();
   }
 
   // Widget hiển thị ảnh danh mục

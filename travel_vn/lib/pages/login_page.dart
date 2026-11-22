@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:google_sign_in/google_sign_in.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'package:travel_vn/models/login_model.dart';
-import 'package:travel_vn/models/auth_models.dart';
+import 'package:travel_vn/services/session_helper.dart';
 import 'package:travel_vn/repositories/auth_repository.dart';
 
 class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
+  const LoginPage(
+      {super.key, this.returnToCaller = false, this.title = 'Đăng nhập'});
+
+  final bool returnToCaller;
+  final String title;
 
   @override
   State<LoginPage> createState() => _LoginPageState();
@@ -19,21 +23,8 @@ class _LoginPageState extends State<LoginPage> {
   bool _isLoading = false;
   bool _obscurePassword = true;
 
-  // Web Client ID dùng làm serverClientId.
-  static const String _googleWebClientId =
-      '401710603851-ba988ij1csm8b633m65racuij5rnlf62.apps.googleusercontent.com';
-
-  // Khởi tạo Google Sign-In đúng một lần.
-  late final Future<void> _googleInitialization;
-
-  @override
-  void initState() {
-    super.initState();
-
-    _googleInitialization = GoogleSignIn.instance.initialize(
-      serverClientId: _googleWebClientId,
-    );
-  }
+  ({Uri url, String key})? _socialAttempt;
+  String? _socialProvider;
 
   @override
   void dispose() {
@@ -79,9 +70,9 @@ class _LoginPageState extends State<LoginPage> {
       if (!mounted) return;
 
       if (result.success) {
-        Navigator.pushReplacementNamed(context, '/profile');
+        _finishLogin();
       } else {
-        _showMessage(result.message ?? 'Đăng nhập thất bại');
+        _showMessage(result.message);
       }
     } catch (e) {
       _showMessage('Lỗi đăng nhập: $e');
@@ -94,70 +85,87 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-  // ĐĂNG NHẬP BẰNG GOOGLE
-  Future<void> _loginWithGoogle() async {
-    if (_isLoading) return;
-
+  Future<void> _prepareSocial(String provider) async {
     setState(() {
       _isLoading = true;
+      _socialAttempt = null;
+      _socialProvider = null;
     });
-
     try {
-      // Chờ Google Sign-In khởi tạo hoàn tất.
-      await _googleInitialization;
-
-      if (!GoogleSignIn.instance.supportsAuthenticate()) {
-        _showMessage(
-            'Nền tảng này chưa hỗ trợ đăng nhập Google theo cách hiện tại');
-        return;
-      }
-
-      // Mở màn hình chọn tài khoản Google.
-      final GoogleSignInAccount account =
-          await GoogleSignIn.instance.authenticate();
-
-      // Lấy Google ID Token.
-      final String? idToken = account.authentication.idToken;
-
-      if (idToken == null || idToken.isEmpty) {
-        _showMessage('Không lấy được Google ID Token');
-        return;
-      }
-
-      // Gửi ID Token đến backend để xác thực.
-      final result = await AuthRepository.socialLogin(
-        SocialLoginModel(
-          provider: 'google',
-          accessToken: idToken,
-        ),
-      );
-
+      final attempt =
+          await AuthRepository.startBrowserLogin(provider.toLowerCase());
       if (!mounted) return;
-
-      if (result.success) {
-        Navigator.pushReplacementNamed(context, '/profile');
-      } else {
-        _showMessage(result.message ?? 'Đăng nhập Google thất bại');
-      }
-    } catch (e, stackTrace) {
-      debugPrint('========== GOOGLE LOGIN ERROR ==========');
-      debugPrint('Error: $e');
-      debugPrint('StackTrace: $stackTrace');
-
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Đăng nhập Google thất bại: $e'),
-          duration: const Duration(seconds: 8),
-        ),
-      );
+      setState(() {
+        _socialAttempt = attempt;
+        _socialProvider = provider;
+      });
+    } catch (error) {
+      _showMessage(error.toString().replaceFirst('Exception: ', ''));
     } finally {
-      if (mounted) {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _openSocialLogin() async {
+    final attempt = _socialAttempt;
+    if (attempt == null || _isLoading) return;
+    setState(() => _isLoading = true);
+    try {
+      final opened = await launchUrl(
+        attempt.url,
+        mode: LaunchMode.externalApplication,
+        webOnlyWindowName: '_blank',
+      );
+      if (!opened) {
+        _showMessage(
+            'Không mở được trình duyệt. Hãy cho phép mở tab mới rồi thử lại.');
+        return;
+      }
+      final deadline = DateTime.now().add(const Duration(minutes: 4));
+      while (mounted &&
+          _socialAttempt == attempt &&
+          DateTime.now().isBefore(deadline)) {
+        final result = await AuthRepository.pollBrowserLogin(attempt.key);
+        if (!mounted || _socialAttempt != attempt) return;
+        if (result != null) {
+          final token = result.token;
+          if (!result.success || token == null || token.isEmpty) {
+            _showMessage(result.message);
+            return;
+          }
+          await SessionHelper.saveToken(token);
+          if (mounted) _finishLogin();
+          return;
+        }
+        await Future<void>.delayed(const Duration(seconds: 2));
+      }
+      if (mounted && _socialAttempt == attempt) {
+        _showMessage('Phiên đăng nhập đã hết giờ. Vui lòng thử lại.');
+      }
+    } catch (error) {
+      _showMessage(error.toString().replaceFirst('Exception: ', ''));
+    } finally {
+      if (mounted && _socialAttempt == attempt) {
         setState(() {
           _isLoading = false;
+          _socialAttempt = null;
+          _socialProvider = null;
         });
       }
+    }
+  }
+
+  void _cancelSocialLogin() => setState(() {
+        _isLoading = false;
+        _socialAttempt = null;
+        _socialProvider = null;
+      });
+
+  void _finishLogin() {
+    if (widget.returnToCaller) {
+      Navigator.of(context).pop(SessionHelper.currentToken);
+    } else {
+      Navigator.pushReplacementNamed(context, '/profile');
     }
   }
 
@@ -165,6 +173,17 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF7F8FA),
+      appBar: AppBar(
+        actions: [
+          TextButton.icon(
+            onPressed: () => Navigator.of(context)
+                .pushNamedAndRemoveUntil('/', (_) => false),
+            icon: const Icon(Icons.home_outlined),
+            label: const Text('Về trang chủ'),
+          ),
+          const SizedBox(width: 12),
+        ],
+      ),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -209,9 +228,9 @@ class _LoginPageState extends State<LoginPage> {
                   const SizedBox(height: 35),
 
                   // TIÊU ĐỀ
-                  const Text(
-                    'Đăng nhập',
-                    style: TextStyle(
+                  Text(
+                    widget.title,
+                    style: const TextStyle(
                       fontSize: 25,
                       fontWeight: FontWeight.bold,
                     ),
@@ -323,9 +342,9 @@ class _LoginPageState extends State<LoginPage> {
                                 strokeWidth: 2,
                               ),
                             )
-                          : const Text(
-                              'ĐĂNG NHẬP',
-                              style: TextStyle(
+                          : Text(
+                              widget.title,
+                              style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -352,48 +371,45 @@ class _LoginPageState extends State<LoginPage> {
 
                   const SizedBox(height: 22),
 
-                  // ĐĂNG NHẬP GOOGLE
-                  SizedBox(
-                    height: 52,
-                    child: OutlinedButton(
-                      onPressed: _isLoading ? null : _loginWithGoogle,
-                      style: OutlinedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: Colors.black87,
-                        side: const BorderSide(color: Colors.grey),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      for (final provider in const [
+                        'Google',
+                        'Facebook',
+                        'Zalo'
+                      ])
+                        OutlinedButton(
+                          onPressed: _isLoading
+                              ? null
+                              : () => _prepareSocial(provider),
+                          child: Text(provider),
                         ),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Text(
-                            'G',
-                            style: TextStyle(
-                              fontSize: 23,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF4285F4),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          const Text(
-                            'Đăng nhập bằng Google',
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                    ],
                   ),
-
+                  if (_socialAttempt != null) ...[
+                    const SizedBox(height: 12),
+                    if (_isLoading)
+                      const Text(
+                          'Hoàn tất đăng nhập trong tab trình duyệt mới.'),
+                    if (!_isLoading)
+                      FilledButton(
+                        onPressed: _openSocialLogin,
+                        child: Text('Mở trang đăng nhập $_socialProvider'),
+                      ),
+                    TextButton(
+                      onPressed: _cancelSocialLogin,
+                      child: const Text('Hủy đăng nhập mạng xã hội'),
+                    ),
+                  ],
                   const SizedBox(height: 25),
 
                   // ĐĂNG KÝ
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
                       const Text('Bạn chưa có tài khoản?'),
                       TextButton(

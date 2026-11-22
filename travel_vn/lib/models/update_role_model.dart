@@ -1,6 +1,6 @@
 enum Role {
-  Admin,
-  Member,
+  admin,
+  member,
 }
 
 class UpdateRoleModel {
@@ -15,17 +15,17 @@ class UpdateRoleModel {
   factory UpdateRoleModel.fromMap(Map<String, dynamic> map) {
     return UpdateRoleModel(
       memberId: map['memberId'],
-      role: Role.values.firstWhere(
-        (e) => e.name == map['role'],
-        orElse: () => Role.Member,
-      ),
+      role: switch (map['role']?.toString().toLowerCase()) {
+        '0' || 'admin' => Role.admin,
+        _ => Role.member,
+      },
     );
   }
 
   Map<String, dynamic> toMap() {
     return {
       'memberId': memberId,
-      'role': role.name,
+      'role': role.index,
     };
   }
 }

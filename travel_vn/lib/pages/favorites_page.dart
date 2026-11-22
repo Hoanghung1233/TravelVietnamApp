@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../services/session_helper.dart';
 
 import '../models/destination.dart';
 import '../repositories/destination_repository.dart';
@@ -38,8 +39,6 @@ class _FavoritesPageState extends State<FavoritesPage> {
       ),
     );
     if (!mounted || token == null) return;
-
-    FavoriteRepository.sessionToken = token;
     _reload();
   }
 
@@ -72,74 +71,75 @@ class _FavoritesPageState extends State<FavoritesPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(
-      title: const Text('Địa điểm yêu thích'),
-      actions: [
-        if (FavoriteRepository.sessionToken != null)
-          IconButton(
-            tooltip: 'Thoát tài khoản yêu thích',
-            onPressed: _removing
-                ? null
-                : () {
-                    FavoriteRepository.sessionToken = null;
-                    _reload();
-                  },
-            icon: const Icon(Icons.logout),
-          ),
-      ],
-    ),
-    bottomNavigationBar: const BottomNavbar(),
-    body: FutureBuilder<List<Destination>>(
-      future: _items,
-      builder: (context, snapshot) {
-        if (_items == null ||
-            (snapshot.hasError && FavoriteRepository.sessionToken == null)) {
-          return Center(
-            child: FilledButton(
-              onPressed: _signIn,
-              child: const Text('Đăng nhập để xem yêu thích'),
-            ),
-          );
-        }
-        if (snapshot.connectionState != ConnectionState.done) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        if (snapshot.hasError) {
-          return Center(
-            child: TextButton(
-              onPressed: _reload,
-              child: const Text('Không tải được danh sách. Thử lại'),
-            ),
-          );
-        }
-
-        final items = snapshot.data!;
-        if (items.isEmpty) {
-          return const Center(child: Text('Bạn chưa lưu địa điểm nào.'));
-        }
-
-        return ListView.builder(
-          itemCount: items.length,
-          itemBuilder: (context, index) {
-            final item = items[index];
-            return ListTile(
-              leading: DestinationImage(
-                repository: _destinations,
-                path: item.text('image'),
-                width: 56,
+        appBar: AppBar(
+          title: const Text('Địa điểm yêu thích'),
+          actions: [
+            if (FavoriteRepository.sessionToken != null)
+              IconButton(
+                tooltip: 'Thoát tài khoản yêu thích',
+                onPressed: _removing
+                    ? null
+                    : () async {
+                        await SessionHelper.logout();
+                        if (mounted) _reload();
+                      },
+                icon: const Icon(Icons.logout),
               ),
-              title: Text(item.name),
-              subtitle: Text(item.text('province')),
-              onTap: _removing ? null : () => _open(item),
-              trailing: IconButton(
-                tooltip: 'Bỏ yêu thích',
-                icon: const Icon(Icons.favorite),
-                onPressed: _removing ? null : () => _remove(item.id),
-              ),
+          ],
+        ),
+        bottomNavigationBar: const BottomNavbar(),
+        body: FutureBuilder<List<Destination>>(
+          future: _items,
+          builder: (context, snapshot) {
+            if (_items == null ||
+                (snapshot.hasError &&
+                    FavoriteRepository.sessionToken == null)) {
+              return Center(
+                child: FilledButton(
+                  onPressed: _signIn,
+                  child: const Text('Đăng nhập để xem yêu thích'),
+                ),
+              );
+            }
+            if (snapshot.connectionState != ConnectionState.done) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (snapshot.hasError) {
+              return Center(
+                child: TextButton(
+                  onPressed: _reload,
+                  child: const Text('Không tải được danh sách. Thử lại'),
+                ),
+              );
+            }
+
+            final items = snapshot.data!;
+            if (items.isEmpty) {
+              return const Center(child: Text('Bạn chưa lưu địa điểm nào.'));
+            }
+
+            return ListView.builder(
+              itemCount: items.length,
+              itemBuilder: (context, index) {
+                final item = items[index];
+                return ListTile(
+                  leading: DestinationImage(
+                    repository: _destinations,
+                    path: item.text('image'),
+                    width: 56,
+                  ),
+                  title: Text(item.name),
+                  subtitle: Text(item.text('province')),
+                  onTap: _removing ? null : () => _open(item),
+                  trailing: IconButton(
+                    tooltip: 'Bỏ yêu thích',
+                    icon: const Icon(Icons.favorite),
+                    onPressed: _removing ? null : () => _remove(item.id),
+                  ),
+                );
+              },
             );
           },
-        );
-      },
-    ),
-  );
+        ),
+      );
 }

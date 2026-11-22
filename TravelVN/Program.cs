@@ -50,6 +50,9 @@ builder.Services.AddScoped<SiteProvider>();
 builder.Services.AddTransient<EmailService>();
 
 builder.Services.AddHttpClient<SocialAuthService>();
+builder.Services.AddHttpClient("SocialOAuthExchange").RemoveAllLoggers();
+builder.Services.AddMemoryCache();
+builder.Services.AddSingleton<SocialBrowserLogin>();
 
 // =========================================
 // MVC / CONTROLLERS

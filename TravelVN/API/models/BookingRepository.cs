@@ -101,7 +101,7 @@ public class BookingRepository : BaseRepository
     }
 
     // Thêm đơn đặt vé
-    public int Add(Booking obj)
+    public int? Add(Booking obj)
     {
         string sql = @"
             INSERT INTO Booking
@@ -121,26 +121,14 @@ public class BookingRepository : BaseRepository
                 Note,
                 CreatedAt
             )
-            VALUES
-            (
-                @BookingCode,
-                @MemberId,
-                @DestinationId,
-                @ContactName,
-                @ContactPhone,
-                @VisitDate,
-                @UnitPrice,
-                @Quantity,
-                @TotalPrice,
-                @PaymentMethod,
-                @PaymentStatus,
-                @Status,
-                @Note,
-                @CreatedAt
-            );
+            OUTPUT INSERTED.BookingId
+            SELECT @BookingCode, @MemberId, d.DestinationId, @ContactName,
+                   @ContactPhone, @VisitDate, d.TicketPrice, @Quantity,
+                   d.TicketPrice * @Quantity, @PaymentMethod, 'Unpaid',
+                   'Pending', @Note, GETDATE()
+            FROM dbo.Destination d
+            WHERE d.DestinationId = @DestinationId;";
 
-            SELECT CAST(SCOPE_IDENTITY() AS INT);";
-
-        return connection.QuerySingle<int>(sql, obj);
+        return connection.QuerySingleOrDefault<int?>(sql, obj);
     }
 }

@@ -14,7 +14,8 @@ class ApiHelper {
     }
 
     final configured = dotenv.isInitialized
-        ? dotenv.maybeGet('API_BASE_URL')?.trim()
+        ? (dotenv.maybeGet('API_BASE_URL') ?? dotenv.maybeGet('API_URL'))
+            ?.trim()
         : null;
     final base = _parseBase(
       configured == null || configured.isEmpty

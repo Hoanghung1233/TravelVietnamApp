@@ -26,13 +26,19 @@ class BottomNavbar extends StatelessWidget {
       '/destinations/search' ||
       '/destination-detail' ||
       '/destination-map' ||
-      '/related-destinations' => '/destinations/search',
+      '/related-destinations' =>
+        '/destinations/search',
       '/favorites' => '/favorites',
-      '/bookings' => '/bookings',
+      '/bookings' || '/booking' => '/bookings',
       '/account' ||
+      '/profile' ||
+      '/login' ||
+      '/register' ||
+      '/admin-booking' ||
       '/destinations/admin' ||
       '/destinations/admin/login' ||
-      '/destinations/admin/edit' => '/account',
+      '/destinations/admin/edit' =>
+        '/account',
       _ => '/',
     };
 

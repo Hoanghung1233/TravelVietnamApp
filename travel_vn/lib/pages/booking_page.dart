@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/booking.dart';
+import '../services/session_helper.dart';
 import 'booking_create_page.dart';
 import 'booking_detail_page.dart';
 import '../repositories/booking_repository.dart';
@@ -51,12 +52,21 @@ class _BookingPageState extends State<BookingPage> {
     }
   }
 
+  Future<void> _signIn() async {
+    await Navigator.of(context).pushNamed('/login', arguments: true);
+    if (mounted) _load();
+  }
+
   Future<void> _create() async {
+    if (SessionHelper.currentToken == null) {
+      await _signIn();
+      if (!mounted || SessionHelper.currentToken == null) return;
+    }
     final created = await Navigator.push<bool>(
       context,
       MaterialPageRoute(builder: (_) => const BookingCreatePage()),
     );
-    if (created == true) _load();
+    if (mounted && created == true) _load();
   }
 
   Future<void> _detail(Booking booking) async {
@@ -158,7 +168,12 @@ class _BookingPageState extends State<BookingPage> {
             Text(error!, textAlign: TextAlign.center),
             const SizedBox(height: 12),
             FilledButton(
-                onPressed: () => _load(), child: const Text('Thử lại')),
+                onPressed: SessionHelper.currentToken == null
+                    ? _signIn
+                    : () => _load(),
+                child: Text(SessionHelper.currentToken == null
+                    ? 'Đăng nhập'
+                    : 'Thử lại')),
           ]),
         ),
       );

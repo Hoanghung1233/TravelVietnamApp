@@ -32,7 +32,10 @@ class Member {
       password: map['password']?.toString(),
       phone: map['phone']?.toString(),
       avatar: map['avatar']?.toString(),
-      role: map['role']?.toString() ?? 'Member',
+      role: switch (map['role']?.toString().toLowerCase()) {
+        '0' || 'admin' => 'Admin',
+        _ => 'Member',
+      },
       isEmailVerified: map['isEmailVerified'] == true ||
           map['isEmailVerified'] == 1 ||
           map['isEmailVerified'] == '1' ||

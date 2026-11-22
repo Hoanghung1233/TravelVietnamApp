@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../models/destination.dart';
+import '../repositories/member_repository.dart';
+import '../services/session_helper.dart';
 import '../repositories/destination_repository.dart';
 import '../widgets/destination_card.dart';
 import '../widgets/bottom_navbar.dart';
@@ -35,6 +37,7 @@ class _DestinationsPageState extends State<DestinationsPage> {
     super.initState();
     _categories = _repository.categories();
     _destinations = _repository.list(_page, _category, _keyword);
+    if (widget.management) _loadAdminSession();
   }
 
   @override
@@ -45,9 +48,25 @@ class _DestinationsPageState extends State<DestinationsPage> {
   }
 
   void _load(int page) => setState(() {
-    _page = page;
-    _destinations = _repository.list(page, _category, _keyword);
-  });
+        _page = page;
+        _destinations = _repository.list(page, _category, _keyword);
+      });
+
+  Future<void> _loadAdminSession() async {
+    final token = SessionHelper.currentToken;
+    if (token == null) return;
+    try {
+      final member = await MemberRepository.getProfile();
+      if (mounted &&
+          _token == null &&
+          token == SessionHelper.currentToken &&
+          member.role == 'Admin') {
+        setState(() => _token = token);
+      }
+    } catch (_) {
+      // The administration page can still prompt for sign-in.
+    }
+  }
 
   Future<void> _signIn() async {
     final token = await Navigator.of(context)
@@ -104,153 +123,162 @@ class _DestinationsPageState extends State<DestinationsPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    bottomNavigationBar: const BottomNavbar(),
-    appBar: AppBar(
-      title: Text(widget.management ? 'Quản trị địa điểm' : 'Địa điểm du lịch'),
-      actions: widget.management
-          ? [
-              if (_token == null)
-                IconButton(
-                  onPressed: _signIn,
-                  icon: const Icon(Icons.admin_panel_settings),
-                  tooltip: 'Đăng nhập quản trị',
-                )
-              else ...[
-                IconButton(
-                  onPressed: () => _edit(),
-                  icon: const Icon(Icons.add),
-                  tooltip: 'Thêm địa điểm',
-                ),
-                IconButton(
-                  onPressed: () => setState(() => _token = null),
-                  icon: const Icon(Icons.logout),
-                  tooltip: 'Thoát quản trị',
-                ),
-              ],
-            ]
-          : null,
-    ),
-    body: LayoutBuilder(
-      builder: (context, constraints) {
-        final wide = constraints.maxWidth >= 700;
-        final inset = wide ? 24.0 : 16.0;
-        final outerInset =
-            (constraints.maxWidth - 1200).clamp(0.0, double.infinity) / 2;
-        final padding = EdgeInsets.symmetric(horizontal: inset + outerInset);
-        return CustomScrollView(
-          controller: _scroll,
-          slivers: [
-            if (!widget.focusSearch && !widget.management)
-              SliverPadding(
-                padding: padding.add(const EdgeInsets.only(top: 8, bottom: 22)),
-                sliver: SliverToBoxAdapter(child: _HomeHero(wide: wide)),
-              ),
-            SliverPadding(
-              padding: padding.add(const EdgeInsets.only(top: 8, bottom: 22)),
-              sliver: SliverToBoxAdapter(child: _filters(wide)),
-            ),
-            SliverPadding(
-              padding: padding.add(const EdgeInsets.only(bottom: 16)),
-              sliver: SliverToBoxAdapter(
-                child: Text(
-                  _keyword.trim().isEmpty && _category == null
-                      ? 'Địa điểm mới nhất'
-                      : 'Kết quả tìm kiếm',
-                  style: Theme.of(context).textTheme.headlineSmall
-                      ?.copyWith(fontWeight: FontWeight.w700),
-                ),
-              ),
-            ),
-            FutureBuilder(
-              future: _destinations,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState != ConnectionState.done) {
-                  return const SliverToBoxAdapter(
-                    child: Padding(
-                      padding: EdgeInsets.all(32),
-                      child: Center(child: CircularProgressIndicator()),
+        bottomNavigationBar: const BottomNavbar(),
+        appBar: AppBar(
+          title: Text(
+              widget.management ? 'Quản trị địa điểm' : 'Địa điểm du lịch'),
+          actions: widget.management
+              ? [
+                  if (_token == null)
+                    IconButton(
+                      onPressed: _signIn,
+                      icon: const Icon(Icons.admin_panel_settings),
+                      tooltip: 'Đăng nhập quản trị',
+                    )
+                  else ...[
+                    IconButton(
+                      onPressed: () => _edit(),
+                      icon: const Icon(Icons.add),
+                      tooltip: 'Thêm địa điểm',
                     ),
-                  );
-                }
-
-                if (snapshot.hasError) {
-                  return SliverToBoxAdapter(
-                    child: Center(
-                      child: TextButton(
-                        onPressed: () {
-                          _categories = _repository.categories();
-                          _load(_page);
-                        },
-                        child: const Text('Không tải được địa điểm. Thử lại'),
-                      ),
+                    IconButton(
+                      onPressed: () => setState(() => _token = null),
+                      icon: const Icon(Icons.logout),
+                      tooltip: 'Thoát quản trị',
                     ),
-                  );
-                }
-
-                final items = snapshot.data!;
-                return SliverMainAxisGroup(
-                  slivers: [
-                    if (items.isEmpty)
-                      const SliverToBoxAdapter(
+                  ],
+                ]
+              : null,
+        ),
+        body: LayoutBuilder(
+          builder: (context, constraints) {
+            final wide = constraints.maxWidth >= 700;
+            final inset = wide ? 24.0 : 16.0;
+            final outerInset =
+                (constraints.maxWidth - 1200).clamp(0.0, double.infinity) / 2;
+            final padding =
+                EdgeInsets.symmetric(horizontal: inset + outerInset);
+            return CustomScrollView(
+              controller: _scroll,
+              slivers: [
+                if (!widget.focusSearch && !widget.management)
+                  SliverPadding(
+                    padding:
+                        padding.add(const EdgeInsets.only(top: 8, bottom: 22)),
+                    sliver: SliverToBoxAdapter(child: _HomeHero(wide: wide)),
+                  ),
+                SliverPadding(
+                  padding:
+                      padding.add(const EdgeInsets.only(top: 8, bottom: 22)),
+                  sliver: SliverToBoxAdapter(child: _filters(wide)),
+                ),
+                SliverPadding(
+                  padding: padding.add(const EdgeInsets.only(bottom: 16)),
+                  sliver: SliverToBoxAdapter(
+                    child: Text(
+                      _keyword.trim().isEmpty && _category == null
+                          ? 'Địa điểm mới nhất'
+                          : 'Kết quả tìm kiếm',
+                      style: Theme.of(context)
+                          .textTheme
+                          .headlineSmall
+                          ?.copyWith(fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                ),
+                FutureBuilder(
+                  future: _destinations,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState != ConnectionState.done) {
+                      return const SliverToBoxAdapter(
                         child: Padding(
-                          padding: EdgeInsets.all(24),
-                          child: Center(child: Text('Không tìm thấy địa điểm')),
+                          padding: EdgeInsets.all(32),
+                          child: Center(child: CircularProgressIndicator()),
                         ),
-                      )
-                    else
-                      SliverPadding(
-                        padding: padding,
-                        sliver: SliverGrid.builder(
-                          gridDelegate:
-                              SliverGridDelegateWithFixedCrossAxisCount(
+                      );
+                    }
+
+                    if (snapshot.hasError) {
+                      return SliverToBoxAdapter(
+                        child: Center(
+                          child: TextButton(
+                            onPressed: () {
+                              _categories = _repository.categories();
+                              _load(_page);
+                            },
+                            child:
+                                const Text('Không tải được địa điểm. Thử lại'),
+                          ),
+                        ),
+                      );
+                    }
+
+                    final items = snapshot.data!;
+                    return SliverMainAxisGroup(
+                      slivers: [
+                        if (items.isEmpty)
+                          const SliverToBoxAdapter(
+                            child: Padding(
+                              padding: EdgeInsets.all(24),
+                              child: Center(
+                                  child: Text('Không tìm thấy địa điểm')),
+                            ),
+                          )
+                        else
+                          SliverPadding(
+                            padding: padding,
+                            sliver: SliverGrid.builder(
+                              gridDelegate:
+                                  SliverGridDelegateWithFixedCrossAxisCount(
                                 crossAxisCount: constraints.maxWidth >= 1024
                                     ? 3
                                     : constraints.maxWidth >= 560
-                                    ? 2
-                                    : 1,
+                                        ? 2
+                                        : 1,
                                 mainAxisExtent: wide ? 255 : 218,
                                 mainAxisSpacing: 16,
                                 crossAxisSpacing: 16,
                               ),
-                          itemCount: items.length,
-                          itemBuilder: (context, index) => _card(items[index]),
-                        ),
-                      ),
-                    if (items.isNotEmpty || _page > 1)
-                      SliverToBoxAdapter(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              IconButton(
-                                tooltip: 'Trang trước',
-                                onPressed: _page == 1
-                                    ? null
-                                    : () => _changePage(_page - 1),
-                                icon: const Icon(Icons.chevron_left),
-                              ),
-                              Text('Trang $_page'),
-                              IconButton(
-                                tooltip: 'Trang sau',
-                                onPressed: items.length < 10
-                                    ? null
-                                    : () => _changePage(_page + 1),
-                                icon: const Icon(Icons.chevron_right),
-                              ),
-                            ],
+                              itemCount: items.length,
+                              itemBuilder: (context, index) =>
+                                  _card(items[index]),
+                            ),
                           ),
-                        ),
-                      ),
-                  ],
-                );
-              },
-            ),
-          ],
-        );
-      },
-    ),
-  );
+                        if (items.isNotEmpty || _page > 1)
+                          SliverToBoxAdapter(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  IconButton(
+                                    tooltip: 'Trang trước',
+                                    onPressed: _page == 1
+                                        ? null
+                                        : () => _changePage(_page - 1),
+                                    icon: const Icon(Icons.chevron_left),
+                                  ),
+                                  Text('Trang $_page'),
+                                  IconButton(
+                                    tooltip: 'Trang sau',
+                                    onPressed: items.length < 10
+                                        ? null
+                                        : () => _changePage(_page + 1),
+                                    icon: const Icon(Icons.chevron_right),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                      ],
+                    );
+                  },
+                ),
+              ],
+            );
+          },
+        ),
+      );
 
   Widget _filters(bool wide) {
     final search = TextField(
@@ -332,22 +360,21 @@ class _DestinationsPageState extends State<DestinationsPage> {
   }
 
   Widget _card(Destination item) => DestinationCard(
-    item: item,
-    repository: _repository,
-    onTap: () =>
-        Navigator.of(context)
+        item: item,
+        repository: _repository,
+        onTap: () => Navigator.of(context)
             .pushNamed('/destination-detail', arguments: (_repository, item)),
-    menu: _token == null
-        ? null
-        : PopupMenuButton<String>(
-            onSelected: (action) =>
-                action == 'edit' ? _edit(item) : _delete(item),
-            itemBuilder: (_) => const [
-              PopupMenuItem(value: 'edit', child: Text('Sửa')),
-              PopupMenuItem(value: 'delete', child: Text('Xóa')),
-            ],
-          ),
-  );
+        menu: _token == null
+            ? null
+            : PopupMenuButton<String>(
+                onSelected: (action) =>
+                    action == 'edit' ? _edit(item) : _delete(item),
+                itemBuilder: (_) => const [
+                  PopupMenuItem(value: 'edit', child: Text('Sửa')),
+                  PopupMenuItem(value: 'delete', child: Text('Xóa')),
+                ],
+              ),
+      );
 }
 
 class _HomeHero extends StatelessWidget {
@@ -356,54 +383,65 @@ class _HomeHero extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => ClipRRect(
-    borderRadius: BorderRadius.circular(24),
-    child: SizedBox(
-      height: wide ? 358 : 224,
-      width: double.infinity,
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          Image.asset(
-            'assets/vinh-ha-long.jpg',
-            fit: BoxFit.cover,
-            alignment: const Alignment(0, -0.15),
-          ),
-          const DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                stops: [0.25, 1],
-                colors: [Colors.transparent, Color(0xE6072630)],
+        borderRadius: BorderRadius.circular(26),
+        child: SizedBox(
+          height: wide ? 380 : 234,
+          width: double.infinity,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              Image.asset(
+                'assets/vinh-ha-long.jpg',
+                fit: BoxFit.cover,
+                alignment: const Alignment(0, -0.15),
               ),
-            ),
-          ),
-          Positioned(
-            left: wide ? 32 : 18,
-            right: wide ? 32 : 18,
-            bottom: wide ? 26 : 16,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'Khám phá Việt Nam',
-                  style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w800,
-                    fontSize: wide ? 44 : 30,
+              const DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    stops: [0.25, 1],
+                    colors: [Colors.transparent, Color(0xE6072630)],
                   ),
                 ),
-                const SizedBox(height: 6),
-                const Text(
-                  'Tìm điểm đến cho chuyến đi tiếp theo của bạn.',
-                  style: TextStyle(color: Colors.white, fontSize: 15),
+              ),
+              Positioned(
+                left: wide ? 32 : 18,
+                right: wide ? 32 : 18,
+                bottom: wide ? 26 : 16,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Khám phá Việt Nam',
+                      style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w800,
+                            fontSize: wide ? 48 : 30,
+                          ),
+                    ),
+                    const SizedBox(height: 6),
+                    const Text(
+                      'Tìm điểm đến cho chuyến đi tiếp theo của bạn.',
+                      style: TextStyle(color: Colors.white, fontSize: 15),
+                    ),
+                    const SizedBox(height: 12),
+                    FilledButton.icon(
+                      onPressed: () => Navigator.of(context)
+                          .pushNamed('/destinations/search'),
+                      icon: const Icon(Icons.search, size: 19),
+                      label: const Text('Tìm địa điểm'),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: const Color(0xFF075E59),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
-      ),
-    ),
-  );
+        ),
+      );
 }

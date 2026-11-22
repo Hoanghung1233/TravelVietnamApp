@@ -33,7 +33,7 @@ class _AdminMemberDetailPageState extends State<AdminMemberDetailPage> {
       return;
     }
 
-    final newRole = _selectedRole == 'Admin' ? Role.Admin : Role.Member;
+    final newRole = _selectedRole == 'Admin' ? Role.admin : Role.member;
 
     setState(() => _isSaving = true);
 
@@ -179,7 +179,7 @@ class _AdminMemberDetailPageState extends State<AdminMemberDetailPage> {
           ),
           const SizedBox(height: 8),
           DropdownButtonFormField<String>(
-            value: _selectedRole,
+            initialValue: _selectedRole,
             decoration: const InputDecoration(
               labelText: 'Vai trò',
               border: OutlineInputBorder(),

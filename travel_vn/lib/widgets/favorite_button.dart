@@ -35,7 +35,6 @@ class _FavoriteButtonState extends State<FavoriteButton> {
           ),
         );
         if (!mounted || token == null) return;
-        FavoriteRepository.sessionToken = token;
         saved = false;
       }
 
@@ -64,33 +63,33 @@ class _FavoriteButtonState extends State<FavoriteButton> {
 
   @override
   Widget build(BuildContext context) => FutureBuilder<bool>(
-    future: _status,
-    builder: (context, snapshot) {
-      if (_busy || snapshot.connectionState == ConnectionState.waiting) {
-        return const Padding(
-          padding: EdgeInsets.all(16),
-          child: SizedBox.square(
-            dimension: 20,
-            child: CircularProgressIndicator(strokeWidth: 2),
-          ),
-        );
-      }
-      if (snapshot.hasError && FavoriteRepository.sessionToken != null) {
-        return IconButton(
-          tooltip: 'Thử tải lại yêu thích',
-          icon: const Icon(Icons.refresh),
-          onPressed: () => setState(() {
-            _status = _load();
-          }),
-        );
-      }
+        future: _status,
+        builder: (context, snapshot) {
+          if (_busy || snapshot.connectionState == ConnectionState.waiting) {
+            return const Padding(
+              padding: EdgeInsets.all(16),
+              child: SizedBox.square(
+                dimension: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            );
+          }
+          if (snapshot.hasError && FavoriteRepository.sessionToken != null) {
+            return IconButton(
+              tooltip: 'Thử tải lại yêu thích',
+              icon: const Icon(Icons.refresh),
+              onPressed: () => setState(() {
+                _status = _load();
+              }),
+            );
+          }
 
-      final saved = snapshot.data ?? false;
-      return IconButton(
-        tooltip: saved ? 'Bỏ yêu thích' : 'Lưu yêu thích',
-        icon: Icon(saved ? Icons.favorite : Icons.favorite_border),
-        onPressed: () => _toggle(saved),
+          final saved = snapshot.data ?? false;
+          return IconButton(
+            tooltip: saved ? 'Bỏ yêu thích' : 'Lưu yêu thích',
+            icon: Icon(saved ? Icons.favorite : Icons.favorite_border),
+            onPressed: () => _toggle(saved),
+          );
+        },
       );
-    },
-  );
 }

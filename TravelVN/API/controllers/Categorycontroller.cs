@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
 using TravelVN.API.Models;
 
 namespace TravelVN.API.Controller;
@@ -33,8 +34,16 @@ public class CategoryController : BaseController
     }
     [Authorize(Roles = "Admin")]
     [HttpDelete("{id}")]
-    public int Delete(int id)
+    public ActionResult<int> Delete(int id)
     {
-        return Provider.Category.Delete(id);
+        try
+        {
+            int deleted = Provider.Category.Delete(id);
+            return deleted == 0 ? NotFound() : Ok(deleted);
+        }
+        catch (SqlException exception) when (exception.Number == 547)
+        {
+            return Conflict("Danh mục còn địa điểm. Hãy chuyển các địa điểm sang danh mục khác trước khi xóa.");
+        }
     }
 }

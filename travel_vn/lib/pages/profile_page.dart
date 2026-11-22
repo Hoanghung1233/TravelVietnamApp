@@ -3,7 +3,11 @@ import 'package:travel_vn/models/member.dart';
 import 'package:travel_vn/repositories/member_repository.dart';
 import 'package:travel_vn/repositories/auth_repository.dart';
 
-import 'package:travel_vn/pages/login_page.dart';
+import '../services/session_helper.dart';
+import '../service/api_helper.dart';
+import '../widgets/bottom_navbar.dart';
+import 'admin_category_page.dart';
+import 'admin_members_page.dart';
 import 'edit_profile_page.dart';
 import 'change_password_page.dart';
 import 'update_email_page.dart';
@@ -23,7 +27,7 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   void initState() {
     super.initState();
-    _loadProfile();
+    if (SessionHelper.currentToken != null) _loadProfile();
   }
 
   Future<void> _loadProfile() async {
@@ -77,13 +81,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
       if (!mounted) return;
 
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(
-          builder: (_) => const LoginPage(),
-        ),
-        (route) => false,
-      );
+      Navigator.of(context).pushNamedAndRemoveUntil('/', (_) => false);
     } catch (e) {
       if (!mounted) return;
 
@@ -98,13 +96,14 @@ class _ProfilePageState extends State<ProfilePage> {
       context,
       MaterialPageRoute(builder: (_) => page),
     ).then((_) {
-      _loadProfile();
+      if (SessionHelper.currentToken != null) _loadProfile();
     });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      bottomNavigationBar: const BottomNavbar(),
       appBar: AppBar(
         title: const Text('Tài khoản của tôi'),
         centerTitle: true,
@@ -116,39 +115,52 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
         ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _errorMessage != null
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(
-                          Icons.error_outline,
-                          size: 48,
-                          color: Colors.red,
+      body: SessionHelper.currentToken == null
+          ? Center(
+              child: FilledButton(
+                onPressed: () async {
+                  await Navigator.of(context)
+                      .pushNamed('/login', arguments: true);
+                  if (mounted && SessionHelper.currentToken != null) {
+                    _loadProfile();
+                  }
+                },
+                child: const Text('Đăng nhập'),
+              ),
+            )
+          : _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : _errorMessage != null
+                  ? Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.error_outline,
+                              size: 48,
+                              color: Colors.red,
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              _errorMessage!,
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 16),
+                            FilledButton(
+                              onPressed: _loadProfile,
+                              child: const Text('Thử lại'),
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 12),
-                        Text(
-                          _errorMessage!,
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 16),
-                        FilledButton(
-                          onPressed: _loadProfile,
-                          child: const Text('Thử lại'),
-                        ),
-                      ],
-                    ),
-                  ),
-                )
-              : _member == null
-                  ? const Center(
-                      child: Text('Không tìm thấy thông tin tài khoản'),
+                      ),
                     )
-                  : _buildProfile(),
+                  : _member == null
+                      ? const Center(
+                          child: Text('Không tìm thấy thông tin tài khoản'),
+                        )
+                      : _buildProfile(),
     );
   }
 
@@ -172,7 +184,8 @@ class _ProfilePageState extends State<ProfilePage> {
               backgroundColor: Theme.of(context).colorScheme.primaryContainer,
               backgroundImage:
                   member.avatar != null && member.avatar!.isNotEmpty
-                      ? NetworkImage(member.avatar!)
+                      ? NetworkImage(
+                          const ApiHelper().asset(member.avatar!).toString())
                       : null,
               child: member.avatar == null || member.avatar!.isEmpty
                   ? const Icon(Icons.person, size: 55)
@@ -225,6 +238,30 @@ class _ProfilePageState extends State<ProfilePage> {
             value: member.isEmailVerified ? 'Đã xác thực' : 'Chưa xác thực',
           ),
           const SizedBox(height: 20),
+          if (member.role.toLowerCase() == 'admin') ...[
+            _buildSectionTitle('Quản trị'),
+            ListTile(
+              leading: const Icon(Icons.place_outlined),
+              title: const Text('Quản trị địa điểm'),
+              onTap: () =>
+                  Navigator.of(context).pushNamed('/destinations/admin'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.category_outlined),
+              title: const Text('Quản trị danh mục'),
+              onTap: () => _openPage(const AdminCategoryPage()),
+            ),
+            ListTile(
+              leading: const Icon(Icons.people_outline),
+              title: const Text('Quản lý thành viên'),
+              onTap: () => _openPage(const AdminMembersPage()),
+            ),
+            ListTile(
+              leading: const Icon(Icons.event_available_outlined),
+              title: const Text('Quản trị đặt chỗ'),
+              onTap: () => Navigator.of(context).pushNamed('/admin-booking'),
+            ),
+          ],
           _buildSectionTitle('Quản lý tài khoản'),
           _buildActionTile(
             icon: Icons.edit_outlined,

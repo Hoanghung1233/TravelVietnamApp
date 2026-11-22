@@ -1,4 +1,6 @@
-
+using System.Net.Mail;
+using System.Security.Cryptography;
+using Microsoft.Data.SqlClient;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TravelVN.API.Models;
@@ -30,54 +32,73 @@ public class AuthController : BaseController
     [HttpPost("register")]
     public async Task<IActionResult> Register(RegisterModel obj)
     {
-        if (string.IsNullOrWhiteSpace(obj.Email) ||
-            string.IsNullOrWhiteSpace(obj.Password))
-            return BadRequest("Email and password are required");
+        string email = obj.Email?.Trim() ?? "";
+        if (!MailAddress.TryCreate(email, out var address) ||
+            address.Address != email || email.Length > 150 ||
+            string.IsNullOrWhiteSpace(obj.Password) || obj.Password.Length < 8 ||
+            System.Text.Encoding.UTF8.GetByteCount(obj.Password) > 72)
+            return BadRequest(new { message = "Nhập email hợp lệ và mật khẩu từ 8 ký tự, tối đa 72 byte UTF-8." });
 
-        if (obj.Password.Length < 8)
-            return BadRequest("Password must have at least 8 characters");
+        if (!emailService.CanSendOtp)
+            return StatusCode(503, new { message = "Máy chủ chưa cấu hình gửi mã OTP." });
 
-        if (Provider.Member.GetMemberByEmail(obj.Email) != null)
-            return BadRequest("Email already exists");
-
-        Member member = new Member
+        var member = Provider.Member.GetMemberByEmail(email);
+        if (member is null)
         {
-            MemberId = Guid.NewGuid().ToString("N"),
-            Surname = obj.Surname,
-            GivenName = obj.GivenName,
-            Email = obj.Email.Trim(),
-            Password = obj.Password,
-            Phone = obj.Phone,
-            Role = Role.Member,
-            IsEmailVerified = false
-        };
+            member = new Member
+            {
+                MemberId = Guid.NewGuid().ToString("N"),
+                Surname = obj.Surname,
+                GivenName = obj.GivenName,
+                Email = email,
+                Password = obj.Password,
+                Phone = obj.Phone,
+                Role = Role.Member,
+                IsEmailVerified = false
+            };
 
-        int result = Provider.Member.Add(member);
+            try
+            {
+                if (Provider.Member.Add(member) <= 0)
+                    return BadRequest(new { message = "Không thể tạo tài khoản." });
+            }
+            catch (SqlException exception) when (exception.Number is 2601 or 2627)
+            {
+                return Conflict(new { message = "Email đã được đăng ký. Vui lòng thử lại." });
+            }
+        }
+        else if (member.IsEmailVerified || member.Role != Role.Member ||
+                 string.IsNullOrEmpty(member.Password) ||
+                 !BCrypt.Net.BCrypt.Verify(obj.Password, member.Password))
+        {
+            return Conflict(new { message = "Email đã được đăng ký. Kiểm tra mật khẩu hoặc dùng Quên mật khẩu." });
+        }
 
-        if (result <= 0)
-            return BadRequest("Register failed");
-
-        string code = Random.Shared.Next(100000, 1000000).ToString();
-
-        Provider.EmailOtp.InvalidateOldOtp(
-            member.MemberId,
-            "VerifyEmail");
-
+        string memberId = member.MemberId ?? throw new InvalidOperationException("Missing member ID.");
+        string code = RandomNumberGenerator.GetInt32(100000, 1000000).ToString();
+        Provider.EmailOtp.InvalidateOldOtp(memberId, "VerifyEmail");
         Provider.EmailOtp.Add(new EmailOtp
         {
-            MemberId = member.MemberId,
-            Email = member.Email,
+            MemberId = memberId,
+            Email = email,
             CodeHash = BCrypt.Net.BCrypt.HashPassword(code),
             Purpose = "VerifyEmail",
             ExpiresAt = DateTime.Now.AddMinutes(5)
         });
 
-        await emailService.SendOtp(member.Email, code);
+        try
+        {
+            await emailService.SendOtp(email, code);
+        }
+        catch (SmtpException)
+        {
+            return StatusCode(503, new { message = "Chưa gửi được mã OTP. Hãy thử đăng ký lại với cùng email và mật khẩu." });
+        }
 
         return Ok(new
         {
             Success = true,
-            Message = "Register successful. Please verify your email."
+            Message = "Đăng ký thành công. Hãy nhập mã xác thực."
         });
     }
 
@@ -140,11 +161,9 @@ public class AuthController : BaseController
 
         string provider = obj.Provider.Trim().ToLowerInvariant();
 
-        if (provider != "google" &&
-            provider != "facebook" &&
-            provider != "zalo")
+        if (provider != "google")
         {
-            return BadRequest("Unsupported social provider");
+            return BadRequest("Use the browser sign-in flow for Facebook or Zalo.");
         }
 
         SocialUser? user = await socialAuthService.Login(
@@ -154,7 +173,77 @@ public class AuthController : BaseController
         if (user == null)
             return Unauthorized("Invalid social token");
 
-        Member member = new Member
+        var result = SignInSocial(provider, user);
+        return result.Success ? Ok(result) : Conflict(result);
+    }
+
+    [AllowAnonymous]
+    [HttpPost("oauth/{provider}/start")]
+    public IActionResult StartBrowserLogin(string provider, [FromServices] SocialBrowserLogin browser)
+    {
+        Response.Headers.CacheControl = "no-store";
+        if (!SocialBrowserLogin.Supports(provider)) return NotFound();
+        var settings = browser.Settings(provider);
+        if (settings is null)
+            return StatusCode(503, new { message = $"Máy chủ chưa cấu hình đăng nhập {provider}." });
+
+        var (url, key) = browser.Begin(settings);
+        return Ok(new { authorizationUrl = url, attemptKey = key });
+    }
+
+    [AllowAnonymous]
+    [HttpGet("oauth/{provider}/callback")]
+    public async Task<IActionResult> BrowserLoginCallback(
+        string provider, string? code, string? state, string? error,
+        [FromServices] SocialBrowserLogin browser,
+        [FromServices] IHttpClientFactory clients,
+        [FromServices] ILogger<AuthController> logger)
+    {
+        Response.Headers.CacheControl = "no-store";
+        Response.Headers["Referrer-Policy"] = "no-referrer";
+        if (state is null || browser.TakeCallback(provider, state) is not { } attempt)
+            return BadRequest("Phiên đăng nhập không hợp lệ hoặc đã hết hạn.");
+
+        var login = new LoginResult { Message = "Đăng nhập bị hủy hoặc không được xác nhận." };
+        if (string.IsNullOrEmpty(error) && !string.IsNullOrEmpty(code))
+        {
+            try
+            {
+                string? token = await browser.ExchangeAsync(
+                    clients.CreateClient("SocialOAuthExchange"), attempt, code, HttpContext.RequestAborted);
+                if (token is not null &&
+                    await socialAuthService.Login(provider, token, attempt.Provider.ClientId) is { } user)
+                    login = SignInSocial(provider, user);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning("Social sign-in failed for {Provider}: {ErrorType}", provider, ex.GetType().Name);
+                login.Message = "Không thể hoàn tất đăng nhập. Vui lòng thử lại.";
+            }
+        }
+
+        SocialBrowserLogin.Complete(attempt, login);
+        return Content(login.Success
+            ? "Đăng nhập thành công. Bạn có thể đóng tab này và quay về TravelVN."
+            : "Không hoàn tất đăng nhập. Hãy quay lại TravelVN.", "text/plain; charset=utf-8");
+    }
+
+    [AllowAnonymous]
+    [HttpPost("oauth/result")]
+    public IActionResult BrowserLoginResult(
+        [FromBody] BrowserLoginRequest request, [FromServices] SocialBrowserLogin browser)
+    {
+        Response.Headers.CacheControl = "no-store";
+        if (!browser.Poll(request.AttemptKey, out var result))
+            return NotFound(new { message = "Phiên đăng nhập đã hết hạn. Vui lòng thử lại." });
+        return result is null ? Accepted() : Ok(result);
+    }
+
+    public sealed record BrowserLoginRequest(string AttemptKey);
+
+    private LoginResult SignInSocial(string provider, SocialUser user)
+    {
+        var member = new Member
         {
             Surname = user.Surname,
             GivenName = user.GivenName,
@@ -163,17 +252,13 @@ public class AuthController : BaseController
             IsEmailVerified = user.IsEmailVerified,
             Role = Role.Member
         };
-
-        LoginResult result = Provider.Member.SocialLogin(
-            member,
-            provider,
-            user.ProviderUserId,
-            configuration);
-
-        if (!result.Success)
-            return Conflict(result);
-
-        return Ok(result);
+        var providerName = provider switch
+        {
+            "google" => "Google",
+            "facebook" => "Facebook",
+            _ => "Zalo"
+        };
+        return Provider.Member.SocialLogin(member, providerName, user.ProviderUserId, configuration);
     }
 
     // =========================================
@@ -195,7 +280,7 @@ public class AuthController : BaseController
             });
         }
 
-        string code = Random.Shared.Next(100000, 1000000).ToString();
+        string code = RandomNumberGenerator.GetInt32(100000, 1000000).ToString();
 
         Provider.EmailOtp.InvalidateOldOtp(
             member.MemberId,
@@ -334,7 +419,7 @@ public class AuthController : BaseController
         if (existing != null && existing.MemberId != memberId)
             return Conflict("Email already belongs to another account");
 
-        string code = Random.Shared.Next(100000, 1000000).ToString();
+        string code = RandomNumberGenerator.GetInt32(100000, 1000000).ToString();
 
         Provider.EmailOtp.InvalidateOldOtp(
             memberId,

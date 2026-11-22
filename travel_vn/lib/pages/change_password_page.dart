@@ -28,16 +28,14 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
     setState(() => _isLoading = true);
 
     try {
-      String message;
-
       if (_isSetPassword) {
-        message = await AuthRepository.setPassword(
+        await AuthRepository.setPassword(
           SetPasswordModel(
             newPassword: _newPasswordController.text,
           ),
         );
       } else {
-        message = await AuthRepository.changePassword(
+        await AuthRepository.changePassword(
           UpdatePasswordModel(
             currentPassword: _currentPasswordController.text,
             newPassword: _newPasswordController.text,

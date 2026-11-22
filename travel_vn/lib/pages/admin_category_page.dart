@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../service/api_helper.dart';
 import 'package:travel_vn/models/category.dart';
 import 'package:travel_vn/repositories/category_repository.dart';
 
@@ -222,7 +223,11 @@ class _AdminCategoryPageState extends State<AdminCategoryPage> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Lỗi xóa danh mục: $e'),
+          content: Text(
+            e is CategoryHasDestinationsException
+                ? 'Danh mục bạn muốn xóa vẫn còn địa điểm bên trong'
+                : 'Lỗi xóa danh mục: $e',
+          ),
         ),
       );
     }
@@ -265,7 +270,9 @@ class _AdminCategoryPageState extends State<AdminCategoryPage> {
                             child: category.image != null &&
                                     category.image!.isNotEmpty
                                 ? Image.network(
-                                    category.image!,
+                                    const ApiHelper()
+                                        .asset(category.image!)
+                                        .toString(),
                                     width: 55,
                                     height: 55,
                                     fit: BoxFit.cover,
