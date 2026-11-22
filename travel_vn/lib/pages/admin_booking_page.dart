@@ -79,7 +79,7 @@ class _AdminBookingPageState extends State<AdminBookingPage> {
         title:
             Text('Cập nhật ${booking.bookingCode ?? '#${booking.bookingId}'}'),
         content: DropdownButtonFormField<String>(
-          value: selected,
+          initialValue: selected,
           decoration: const InputDecoration(labelText: 'Trạng thái đơn'),
           items: statuses
               .map((s) => DropdownMenuItem(value: s, child: Text(s)))
@@ -142,7 +142,7 @@ class _AdminBookingPageState extends State<AdminBookingPage> {
             child: Row(children: [
               Expanded(
                 child: DropdownButtonFormField<String>(
-                  value: statusFilter,
+                  initialValue: statusFilter,
                   isExpanded: true,
                   decoration: const InputDecoration(
                     labelText: 'Trạng thái đơn',
@@ -161,7 +161,7 @@ class _AdminBookingPageState extends State<AdminBookingPage> {
               const SizedBox(width: 10),
               Expanded(
                 child: DropdownButtonFormField<String>(
-                  value: paymentFilter,
+                  initialValue: paymentFilter,
                   isExpanded: true,
                   decoration: const InputDecoration(
                     labelText: 'Thanh toán',

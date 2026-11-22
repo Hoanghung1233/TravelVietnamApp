@@ -171,7 +171,7 @@ class _BookingCreatePageState extends State<BookingCreatePage> {
             ),
             const SizedBox(height: 12),
             DropdownButtonFormField<String>(
-              value: paymentMethod,
+              initialValue: paymentMethod,
               decoration: _decoration('Phương thức thanh toán',
                   Icons.account_balance_wallet_outlined),
               items: const [

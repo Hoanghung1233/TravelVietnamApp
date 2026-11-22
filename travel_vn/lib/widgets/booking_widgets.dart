@@ -39,7 +39,7 @@ class BookingStatusChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withOpacity(.10),
+        color: color.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
