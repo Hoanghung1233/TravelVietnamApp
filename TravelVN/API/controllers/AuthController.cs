@@ -130,11 +130,25 @@ public class AuthController : BaseController
     // 4. ĐĂNG NHẬP GOOGLE / FACEBOOK / ZALO
     // =========================================
     [HttpPost("social-login")]
-    public async Task<IActionResult> SocialLogin(
-        SocialLoginModel obj)
+    public async Task<IActionResult> SocialLogin(SocialLoginModel obj)
     {
+        if (string.IsNullOrWhiteSpace(obj.Provider) ||
+            string.IsNullOrWhiteSpace(obj.AccessToken))
+        {
+            return BadRequest("Provider and token are required");
+        }
+
+        string provider = obj.Provider.Trim().ToLowerInvariant();
+
+        if (provider != "google" &&
+            provider != "facebook" &&
+            provider != "zalo")
+        {
+            return BadRequest("Unsupported social provider");
+        }
+
         SocialUser? user = await socialAuthService.Login(
-            obj.Provider,
+            provider,
             obj.AccessToken);
 
         if (user == null)
@@ -152,7 +166,7 @@ public class AuthController : BaseController
 
         LoginResult result = Provider.Member.SocialLogin(
             member,
-            obj.Provider,
+            provider,
             user.ProviderUserId,
             configuration);
 
