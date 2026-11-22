@@ -286,7 +286,9 @@ class _ReviewPageState extends State<ReviewPage> {
 }
 
 class ReviewLoginPage extends StatefulWidget {
-  const ReviewLoginPage({super.key});
+  const ReviewLoginPage({super.key, this.title = 'Đăng nhập để đánh giá'});
+
+  final String title;
 
   @override
   State<ReviewLoginPage> createState() => _ReviewLoginPageState();
@@ -329,7 +331,7 @@ class _ReviewLoginPageState extends State<ReviewLoginPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Đăng nhập để đánh giá')),
+    appBar: AppBar(title: Text(widget.title)),
     body: Center(
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 450),

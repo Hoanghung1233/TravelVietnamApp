@@ -36,7 +36,7 @@ void main() {
 
     await tester.tap(find.text('Yêu thích'));
     await tester.pumpAndSettle();
-    expect(find.text('Chức năng này đang chờ tích hợp.'), findsOneWidget);
+    expect(find.text('Đăng nhập để xem yêu thích'), findsOneWidget);
 
     await tester.tap(find.text('Cá nhân'));
     await tester.pumpAndSettle();
@@ -77,6 +77,7 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.text('Xem bản đồ'), findsOneWidget);
+    expect(find.byTooltip('Lưu yêu thích'), findsOneWidget);
     await tester.tap(find.text('Địa điểm liên quan'));
     await tester.pumpAndSettle();
     expect(repository.requestedCategory, 7);
