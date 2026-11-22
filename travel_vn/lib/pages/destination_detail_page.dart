@@ -1,10 +1,10 @@
-
 import 'package:flutter/material.dart';
 
 import '../models/destination.dart';
 import '../repositories/destination_repository.dart';
-import '../widgets/destination_image.dart';
 import '../widgets/bottom_navbar.dart';
+import '../widgets/destination_image.dart';
+import '../widgets/favorite_button.dart';
 import 'review_page.dart';
 
 class DestinationDetailPage extends StatefulWidget {
@@ -27,7 +27,10 @@ class _DestinationDetailPageState extends State<DestinationDetailPage> {
   @override
   Widget build(BuildContext context) => Scaffold(
     bottomNavigationBar: const BottomNavbar(),
-    appBar: AppBar(title: Text(widget.item.name)),
+    appBar: AppBar(
+      title: Text(widget.item.name),
+      actions: [FavoriteButton(destinationId: widget.item.id)],
+    ),
     body: FutureBuilder(
       future: _detail,
       builder: (context, snapshot) {
@@ -79,10 +82,9 @@ class _DestinationDetailPageState extends State<DestinationDetailPage> {
               OutlinedButton.icon(
                 icon: const Icon(Icons.map_outlined),
                 label: const Text('Xem bản đồ'),
-                onPressed: () => Navigator.of(context).pushNamed(
-                  '/destination-map',
-                  arguments: item,
-                ),
+                onPressed: () =>
+                    Navigator.of(context)
+                        .pushNamed('/destination-map', arguments: item),
               ),
 
             OutlinedButton.icon(
@@ -94,6 +96,7 @@ class _DestinationDetailPageState extends State<DestinationDetailPage> {
               ),
             ),
 
+            // Nút mở chức năng Reviews
             OutlinedButton.icon(
               icon: const Icon(Icons.star_outline),
               label: const Text('Đánh giá & nhận xét'),
