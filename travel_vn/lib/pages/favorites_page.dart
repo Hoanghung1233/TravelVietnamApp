@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/destination.dart';
 import '../repositories/destination_repository.dart';
 import '../repositories/favorite_repository.dart';
-import '../review_page.dart';
+import 'review_page.dart';
 import '../widgets/bottom_navbar.dart';
 import '../widgets/destination_image.dart';
 

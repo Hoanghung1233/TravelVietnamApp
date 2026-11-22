@@ -5,6 +5,7 @@ import '../repositories/destination_repository.dart';
 import '../widgets/bottom_navbar.dart';
 import '../widgets/destination_image.dart';
 import '../widgets/favorite_button.dart';
+import 'review_page.dart';
 
 class DestinationDetailPage extends StatefulWidget {
   const DestinationDetailPage({
@@ -43,6 +44,7 @@ class _DestinationDetailPageState extends State<DestinationDetailPage> {
             ),
           );
         }
+
         final item = snapshot.data;
         if (item == null) {
           return const Center(child: CircularProgressIndicator());
@@ -60,15 +62,22 @@ class _DestinationDetailPageState extends State<DestinationDetailPage> {
                     path: path,
                   ),
                 ),
+
             Text(item.name, style: Theme.of(context).textTheme.headlineSmall),
             Text(item.text('province')),
-            if (item.text('address').isNotEmpty) Text(item.text('address')),
+
+            if (item.text('address').isNotEmpty)
+              Text(item.text('address')),
+
             if (item.text('openingHours').isNotEmpty)
               Text('Giờ mở cửa: ${item.text('openingHours')}'),
+
             Text('Giá vé: ${item.text('ticketPrice')} đ'),
+
             const SizedBox(height: 12),
             Text(item.text('description')),
             const SizedBox(height: 12),
+
             if (item.latitude != null && item.longitude != null)
               OutlinedButton.icon(
                 icon: const Icon(Icons.map_outlined),
@@ -77,6 +86,7 @@ class _DestinationDetailPageState extends State<DestinationDetailPage> {
                     Navigator.of(context)
                         .pushNamed('/destination-map', arguments: item),
               ),
+
             OutlinedButton.icon(
               icon: const Icon(Icons.explore_outlined),
               label: const Text('Địa điểm liên quan'),
@@ -84,6 +94,22 @@ class _DestinationDetailPageState extends State<DestinationDetailPage> {
                 '/related-destinations',
                 arguments: (widget.repository, item),
               ),
+            ),
+
+            // Nút mở chức năng Reviews
+            OutlinedButton.icon(
+              icon: const Icon(Icons.star_outline),
+              label: const Text('Đánh giá & nhận xét'),
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => ReviewPage(
+                      destinationId: item.id,
+                      destinationName: item.name,
+                    ),
+                  ),
+                );
+              },
             ),
           ],
         );

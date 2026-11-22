@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../repositories/favorite_repository.dart';
-import '../review_page.dart';
+import '../pages/review_page.dart';
 
 class FavoriteButton extends StatefulWidget {
   const FavoriteButton({super.key, required this.destinationId});
