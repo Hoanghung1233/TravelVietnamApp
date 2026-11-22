@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'destination_repository.dart';
+import 'repositories/destination_repository.dart';
 import 'review_repository.dart';
 
 class ReviewPage extends StatefulWidget {

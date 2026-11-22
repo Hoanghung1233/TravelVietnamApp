@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'destination_repository.dart';
+import 'services/api_helper.dart';
 
 class Review {
   final int reviewId;
@@ -22,9 +22,10 @@ class Review {
 }
 
 class ReviewRepository {
+  final _api = const ApiHelper();
   Future<List<Review>> getByDestination(int destinationId) async {
     final response = await http.get(
-      Uri.parse('$apiBase/api/Review/destination/$destinationId'),
+      _api.endpoint('Review/destination/$destinationId'),
     ).timeout(const Duration(seconds: 10));
 
     _check(response);
@@ -43,7 +44,7 @@ class ReviewRepository {
     String comment,
   ) async {
     final response = await http.post(
-      Uri.parse('$apiBase/api/Review'),
+      _api.endpoint('Review'),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $token',
@@ -68,7 +69,7 @@ class ReviewRepository {
     String comment,
   ) async {
     final response = await http.put(
-      Uri.parse('$apiBase/api/Review/$reviewId'),
+      _api.endpoint('Review/$reviewId'),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $token',
@@ -84,7 +85,7 @@ class ReviewRepository {
 
   Future<void> delete(String token, int reviewId) async {
     final response = await http.delete(
-      Uri.parse('$apiBase/api/Review/$reviewId'),
+      _api.endpoint('Review/$reviewId'),
       headers: {
         'Authorization': 'Bearer $token',
       },
