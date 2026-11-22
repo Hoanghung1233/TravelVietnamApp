@@ -5,6 +5,7 @@ import 'booking_create_page.dart';
 import 'booking_detail_page.dart';
 import '../repositories/booking_repository.dart';
 import '../widgets/booking_widgets.dart';
+import '../widgets/bottom_navbar.dart';
 
 class BookingPage extends StatefulWidget {
   const BookingPage({super.key});
@@ -80,6 +81,7 @@ class _BookingPageState extends State<BookingPage> {
           ),
         ],
       ),
+      bottomNavigationBar: const BottomNavbar(),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _create,
         icon: const Icon(Icons.add),
