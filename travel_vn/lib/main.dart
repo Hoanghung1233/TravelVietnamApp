@@ -11,6 +11,7 @@ import 'models/destination.dart';
 import 'pages/destination_admin.dart';
 import 'pages/destination_detail_page.dart';
 import 'pages/destination_map.dart';
+import 'pages/favorites_page.dart';
 import 'pages/home_page.dart';
 import 'pages/related_destinations_page.dart';
 import 'pages/tab_page.dart';
@@ -63,9 +64,8 @@ final destinationRoutes = <String, WidgetBuilder>{
 
   // Tìm kiếm địa điểm
   '/destinations/search': (_) => const DestinationsPage(focusSearch: true),
-
   // Danh sách yêu thích
-  '/favorites': (_) => const TabPage(title: 'Yêu thích'),
+  '/favorites': (_) => const FavoritesPage(),
 
   // Chức năng đặt chỗ: mở giao diện Member/Admin
   '/bookings': (_) => const BookingAppShell(),

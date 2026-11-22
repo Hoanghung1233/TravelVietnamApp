@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../models/destination.dart';
 import '../repositories/destination_repository.dart';
-import '../widgets/destination_image.dart';
 import '../widgets/bottom_navbar.dart';
+import '../widgets/destination_image.dart';
+import '../widgets/favorite_button.dart';
 
 class DestinationDetailPage extends StatefulWidget {
   const DestinationDetailPage({
@@ -25,7 +26,10 @@ class _DestinationDetailPageState extends State<DestinationDetailPage> {
   @override
   Widget build(BuildContext context) => Scaffold(
     bottomNavigationBar: const BottomNavbar(),
-    appBar: AppBar(title: Text(widget.item.name)),
+    appBar: AppBar(
+      title: Text(widget.item.name),
+      actions: [FavoriteButton(destinationId: widget.item.id)],
+    ),
     body: FutureBuilder(
       future: _detail,
       builder: (context, snapshot) {
